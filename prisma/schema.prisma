@@ -7,17 +7,24 @@ datasource db {
   provider = "postgresql"
 }
 
+enum PracticeType {
+  INDEPENDENT_TAX_PROFESSIONAL
+  TAX_ACCOUNTING_FIRM
+  OTHER
+}
+
 model User {
-  id            String        @id
-  name          String
-  email         String
-  emailVerified Boolean       @default(false)
-  image         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  adminProfile  AdminProfile?
+  id                      String               @id
+  name                    String
+  email                   String
+  emailVerified           Boolean              @default(false)
+  image                   String?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  sessions                Session[]
+  accounts                Account[]
+  adminProfile            AdminProfile?
+  organizationMemberships OrganizationMember[]
 
   @@unique([email])
   @@map("user")
@@ -85,4 +92,39 @@ model AdminProfile {
 
   @@index([userId])
   @@map("admin_profile")
+}
+
+model Organization {
+  id            String       @id @default(cuid())
+  name          String
+  practiceType  PracticeType
+  businessEmail String?
+  businessPhone String?
+  ntn           String?
+  country       String       @default("Pakistan")
+  city          String?
+  address       String?
+  website       String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  members OrganizationMember[]
+
+  @@map("organization")
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("organization_member")
 }

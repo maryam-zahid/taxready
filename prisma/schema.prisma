@@ -13,6 +13,30 @@ enum PracticeType {
   OTHER
 }
 
+enum ClientType {
+  INDIVIDUAL
+  BUSINESS
+}
+
+enum IndividualTaxpayerType {
+  SALARIED_INDIVIDUAL
+  FREELANCER_PROFESSIONAL
+  SOLE_PROPRIETOR
+  OTHER_INDIVIDUAL
+}
+
+enum BusinessEntityType {
+  PARTNERSHIP_AOP
+  PRIVATE_LIMITED_COMPANY
+  PUBLIC_LIMITED_COMPANY
+  OTHER
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id                      String               @id
   name                    String
@@ -109,6 +133,7 @@ model Organization {
   updatedAt     DateTime     @updatedAt
 
   members OrganizationMember[]
+  clients Client[]
 
   @@map("organization")
 }
@@ -127,4 +152,40 @@ model OrganizationMember {
   @@index([organizationId])
   @@index([userId])
   @@map("organization_member")
+}
+
+model Client {
+  id             String       @id @default(cuid())
+  organizationId String
+  type           ClientType
+  status         ClientStatus @default(ACTIVE)
+
+  firstName     String?
+  lastName      String?
+  businessName  String?
+  contactPerson String?
+
+  email String
+  phone String?
+  ntn   String?
+
+  taxpayerType     IndividualTaxpayerType?
+  entityType       BusinessEntityType?
+  occupation       String?
+  businessActivity String?
+
+  taxYear              Int
+  preparationDeadline  DateTime?
+  sendPortalInvitation Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([organizationId, type])
+  @@index([organizationId, status])
+  @@index([email])
+  @@map("client")
 }

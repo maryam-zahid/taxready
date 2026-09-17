@@ -4,7 +4,9 @@ import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { getClientForUser } from "@/services/client.service";
-
+import { getClientRequirementsForUser } from "@/services/compliance-requirement.service";
+import { ComplianceChecklist } from "./compliance-checklist";
+import { GenerateComplianceButton } from "./generate-compliance-button";
 type ClientDetailPageProps = {
   params: Promise<{
     id: string;
@@ -30,8 +32,14 @@ export default async function ClientDetailPage({
   );
 
   if (!client) {
-    notFound();
+    notFound();  
   }
+
+  const requirements =
+  await getClientRequirementsForUser(
+    session.user.id,
+    id
+  );
 
   const clientName =
     client.type === "INDIVIDUAL"
@@ -42,6 +50,12 @@ export default async function ClientDetailPage({
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
+     <Link
+  href={`/clients/${client.id}/tax-profile`}
+  className="inline-block border px-4 py-2"
+>
+  Complete Tax Profile
+</Link> 
       <Link
         href="/clients"
         className="text-sm underline"
@@ -136,7 +150,33 @@ export default async function ClientDetailPage({
             </p>
           </>
         )}
-      </div>
+            </div>
+
+      <section className="mt-8 border-t pt-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">
+              Compliance Checklist
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-600">
+              Requirements generated from the
+              client&apos;s saved tax profile.
+            </p>
+          </div>
+
+          <GenerateComplianceButton
+            clientId={id}
+            hasRequirements={
+              requirements.length > 0
+            }
+          />
+        </div>
+
+        <ComplianceChecklist
+          requirements={requirements}
+        />
+      </section>
     </main>
   );
 }

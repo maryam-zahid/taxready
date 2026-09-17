@@ -37,6 +37,77 @@ enum ClientStatus {
   INACTIVE
 }
 
+enum FilingHistoryStatus {
+  NEW_FILER
+  EXISTING_FILER
+  PREVIOUS_RETURN_UNAVAILABLE
+}
+
+enum IncomeSourceType {
+  SALARY_EMPLOYMENT
+  FREELANCE_PROFESSIONAL
+  BUSINESS
+  RENTAL_PROPERTY
+  CAPITAL_GAINS
+  INVESTMENT_PROFIT
+  AGRICULTURAL
+  FOREIGN
+  OTHER
+}
+
+enum AssetType {
+  BANK_ACCOUNT
+  CASH_FINANCIAL_ASSETS
+  IMMOVABLE_PROPERTY
+  VEHICLE
+  INVESTMENTS_SECURITIES
+  BUSINESS_ASSETS
+  FOREIGN_ASSETS
+  OTHER_ASSETS
+}
+
+enum TaxEvidenceType {
+  EMPLOYER_WITHHOLDING
+  BANK_WITHHOLDING
+  PROPERTY_TAX_WITHHOLDING
+  VEHICLE_TAX
+  BUSINESS_CUSTOMER_WITHHOLDING
+  ADVANCE_TAX_PAYMENT
+  OTHER_TAX_DEDUCTED
+}
+
+enum RequirementCategory {
+  PRIOR_FILING
+  INCOME
+  BANKING
+  ASSETS
+  LIABILITIES
+  TAX_WITHHOLDING
+  OTHER
+}
+
+enum RequirementResponseType {
+  DOCUMENT
+  INFORMATION
+  DOCUMENT_OR_INFORMATION
+}
+
+enum RequirementStatus {
+  PENDING
+  REQUESTED
+  SUBMITTED
+  NEEDS_REVIEW
+  COMPLETED
+  NOT_AVAILABLE
+  NOT_APPLICABLE
+  WAIVED
+}
+
+enum RequirementSource {
+  PROFILE_RULE
+  MANUAL
+}
+
 model User {
   id                      String               @id
   name                    String
@@ -181,11 +252,123 @@ model Client {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taxProfile   ClientTaxProfile?
+  requirements ClientRequirement[]
 
   @@index([organizationId])
   @@index([organizationId, type])
   @@index([organizationId, status])
   @@index([email])
   @@map("client")
+}
+
+model ClientTaxProfile {
+  id       String @id @default(cuid())
+  clientId String @unique
+
+  filingHistoryStatus              FilingHistoryStatus
+  previousTaxReturnAvailable       Boolean             @default(false)
+  previousWealthStatementAvailable Boolean             @default(false)
+
+  hasLiabilities       Boolean @default(false)
+  hasMultipleEmployers Boolean @default(false)
+
+  internalNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client           Client                  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  incomeSources    ClientIncomeSource[]
+  assetTypes       ClientAssetType[]
+  taxEvidenceTypes ClientTaxEvidenceType[]
+
+  @@index([clientId])
+  @@map("client_tax_profile")
+}
+
+model ClientIncomeSource {
+  id           String           @id @default(cuid())
+  taxProfileId String
+  type         IncomeSourceType
+
+  taxProfile ClientTaxProfile @relation(fields: [taxProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([taxProfileId, type])
+  @@index([taxProfileId])
+  @@map("client_income_source")
+}
+
+model ClientAssetType {
+  id           String    @id @default(cuid())
+  taxProfileId String
+  type         AssetType
+
+  taxProfile ClientTaxProfile @relation(fields: [taxProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([taxProfileId, type])
+  @@index([taxProfileId])
+  @@map("client_asset_type")
+}
+
+model ClientTaxEvidenceType {
+  id           String          @id @default(cuid())
+  taxProfileId String
+  type         TaxEvidenceType
+
+  taxProfile ClientTaxProfile @relation(fields: [taxProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([taxProfileId, type])
+  @@index([taxProfileId])
+  @@map("client_tax_evidence_type")
+}
+
+model RequirementDefinition {
+  id           String                  @id @default(cuid())
+  code         String                  @unique
+  title        String
+  description  String?
+  category     RequirementCategory
+  responseType RequirementResponseType
+  active       Boolean                 @default(true)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  clientRequirements ClientRequirement[]
+
+  @@index([category])
+  @@index([active])
+  @@map("requirement_definition")
+}
+
+model ClientRequirement {
+  id                      String @id @default(cuid())
+  clientId                String
+  requirementDefinitionId String
+  taxYear                 Int
+
+  status RequirementStatus @default(PENDING)
+  source RequirementSource @default(PROFILE_RULE)
+
+  required Boolean @default(true)
+
+  practitionerNote String?
+  clientNote       String?
+
+  generatedAt DateTime  @default(now())
+  completedAt DateTime?
+  waivedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client                Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  requirementDefinition RequirementDefinition @relation(fields: [requirementDefinitionId], references: [id])
+
+  @@unique([clientId, requirementDefinitionId, taxYear])
+  @@index([clientId])
+  @@index([clientId, taxYear])
+  @@index([status])
+  @@map("client_requirement")
 }

@@ -5,8 +5,12 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getClientForUser } from "@/services/client.service";
 import { getClientRequirementsForUser } from "@/services/compliance-requirement.service";
+import { getClientRequestsForUser } from "@/services/client-request.service";
+
+import { ClientRequests } from "./client-requests";
 import { ComplianceChecklist } from "./compliance-checklist";
 import { GenerateComplianceButton } from "./generate-compliance-button";
+
 type ClientDetailPageProps = {
   params: Promise<{
     id: string;
@@ -28,18 +32,23 @@ export default async function ClientDetailPage({
 
   const client = await getClientForUser(
     session.user.id,
-    id
+    id,
   );
 
   if (!client) {
-    notFound();  
+    notFound();
   }
 
-  const requirements =
-  await getClientRequirementsForUser(
-    session.user.id,
-    id
-  );
+  const [requirements, requests] = await Promise.all([
+    getClientRequirementsForUser(
+      session.user.id,
+      id,
+    ),
+    getClientRequestsForUser(
+      session.user.id,
+      id,
+    ),
+  ]);
 
   const clientName =
     client.type === "INDIVIDUAL"
@@ -48,20 +57,44 @@ export default async function ClientDetailPage({
         }`.trim()
       : client.businessName ?? "Unnamed Business";
 
+  const requestRequirementOptions = requirements.map(
+    (requirement) => ({
+      id: requirement.id,
+      status: requirement.status,
+      title: requirement.requirementDefinition.title,
+    }),
+  );
+
+  const requestItems = requests.map((request) => ({
+    id: request.id,
+    clientRequirementId: request.clientRequirementId,
+    status: request.status,
+    subject: request.subject,
+    message: request.message,
+    dueAt: request.dueAt,
+    sentAt: request.sentAt,
+    requirementTitle:
+      request.clientRequirement.requirementDefinition
+        .title,
+  }));
+
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
-     <Link
-  href={`/clients/${client.id}/tax-profile`}
-  className="inline-block border px-4 py-2"
->
-  Complete Tax Profile
-</Link> 
-      <Link
-        href="/clients"
-        className="text-sm underline"
-      >
-        Back to Clients
-      </Link>
+      <div className="flex flex-wrap gap-4">
+        <Link
+          href={`/clients/${client.id}/tax-profile`}
+          className="inline-block border px-4 py-2"
+        >
+          Complete Tax Profile
+        </Link>
+
+        <Link
+          href="/clients"
+          className="inline-block px-4 py-2 text-sm underline"
+        >
+          Back to Clients
+        </Link>
+      </div>
 
       <h1 className="mt-5 text-2xl font-semibold">
         {clientName}
@@ -91,31 +124,31 @@ export default async function ClientDetailPage({
         )}
 
         <p>
-          <strong>Tax Year:</strong>{" "}
-          {client.taxYear}
+          <strong>Tax Year:</strong> {client.taxYear}
         </p>
 
         <p>
-          <strong>Status:</strong>{" "}
-          {client.status}
+          <strong>Status:</strong> {client.status}
         </p>
-{client.preparationDeadline && (
-  <p>
-    <strong>
-      Internal Preparation Deadline:
-    </strong>{" "}
-    {client.preparationDeadline
-      .toISOString()
-      .split("T")[0]}
-  </p>
-)}
 
-<p>
-  <strong>Portal Invitation:</strong>{" "}
-  {client.sendPortalInvitation
-    ? "Requested"
-    : "Not Requested"}
-</p>
+        {client.preparationDeadline && (
+          <p>
+            <strong>
+              Internal Preparation Deadline:
+            </strong>{" "}
+            {client.preparationDeadline
+              .toISOString()
+              .split("T")[0]}
+          </p>
+        )}
+
+        <p>
+          <strong>Portal Invitation:</strong>{" "}
+          {client.sendPortalInvitation
+            ? "Requested"
+            : "Not Requested"}
+        </p>
+
         {client.type === "INDIVIDUAL" && (
           <>
             <p>
@@ -150,7 +183,7 @@ export default async function ClientDetailPage({
             </p>
           </>
         )}
-            </div>
+      </div>
 
       <section className="mt-8 border-t pt-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
@@ -177,6 +210,12 @@ export default async function ClientDetailPage({
           requirements={requirements}
         />
       </section>
+
+      <ClientRequests
+        clientId={id}
+        requirements={requestRequirementOptions}
+        requests={requestItems}
+      />
     </main>
   );
 }

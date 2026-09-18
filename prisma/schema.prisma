@@ -108,6 +108,15 @@ enum RequirementSource {
   MANUAL
 }
 
+enum ClientRequestStatus {
+  DRAFT
+  SENT
+  VIEWED
+  SUBMITTED
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id                      String               @id
   name                    String
@@ -255,6 +264,7 @@ model Client {
   organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   taxProfile   ClientTaxProfile?
   requirements ClientRequirement[]
+  requests     ClientRequest[]
 
   @@index([organizationId])
   @@index([organizationId, type])
@@ -365,10 +375,43 @@ model ClientRequirement {
 
   client                Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
   requirementDefinition RequirementDefinition @relation(fields: [requirementDefinitionId], references: [id])
+  requests              ClientRequest[]
 
   @@unique([clientId, requirementDefinitionId, taxYear])
   @@index([clientId])
   @@index([clientId, taxYear])
   @@index([status])
   @@map("client_requirement")
+}
+
+model ClientRequest {
+  id String @id @default(cuid())
+
+  clientId            String
+  clientRequirementId String
+
+  status ClientRequestStatus @default(DRAFT)
+
+  subject String
+  message String?
+
+  dueAt       DateTime?
+  sentAt      DateTime?
+  viewedAt    DateTime?
+  submittedAt DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  clientRequirement ClientRequirement @relation(fields: [clientRequirementId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([clientId, status])
+  @@index([clientRequirementId])
+  @@index([dueAt])
+  @@map("client_request")
 }

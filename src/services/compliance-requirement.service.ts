@@ -353,13 +353,36 @@ if (
 
 export async function getClientRequirementsForUser(
   userId: string,
-  clientId: string
+  clientId: string,
 ) {
-  const client =
-    await getAccessibleClientWithTaxProfile(
-      userId,
-      clientId
-    );
+  const membership =
+    await prisma.organizationMember.findFirst({
+      where: {
+        userId,
+      },
+      select: {
+        organizationId: true,
+      },
+    });
+
+  if (!membership) {
+    throw new Error("ORGANIZATION_NOT_FOUND");
+  }
+
+  const client = await prisma.client.findFirst({
+    where: {
+      id: clientId,
+      organizationId: membership.organizationId,
+    },
+    select: {
+      id: true,
+      taxYear: true,
+    },
+  });
+
+  if (!client) {
+    throw new Error("CLIENT_NOT_FOUND");
+  }
 
   return prisma.clientRequirement.findMany({
     where: {

@@ -9,6 +9,10 @@ import {
   createClientRequestForUser,
   sendClientRequestForUser,
 } from "@/services/client-request.service";
+import {
+  createClientInvitationForUser,
+  revokeClientInvitationForUser,
+} from "@/services/client-invitation.service";
 
 async function getAuthenticatedUserId() {
   const session = await auth.api.getSession({
@@ -71,6 +75,46 @@ export async function sendClientRequestAction(
   const userId = await getAuthenticatedUserId();
 
   await sendClientRequestForUser(userId, requestId);
+
+  revalidatePath(`/clients/${clientId}`);
+
+  return {
+    success: true,
+  };
+}
+export async function sendClientInvitationAction(
+  clientId: string,
+) {
+  const userId = await getAuthenticatedUserId();
+
+  const result = await createClientInvitationForUser(
+    userId,
+    clientId,
+  );
+
+  revalidatePath(`/clients/${clientId}`);
+
+  return {
+    success: true,
+    invitationId: result.invitation.id,
+
+    // Temporary for local MVP testing only.
+    // Once email delivery is connected, raw token will not
+    // be returned to the browser.
+    token: result.token,
+  };
+}
+
+export async function revokeClientInvitationAction(
+  clientId: string,
+  invitationId: string,
+) {
+  const userId = await getAuthenticatedUserId();
+
+  await revokeClientInvitationForUser(
+    userId,
+    invitationId,
+  );
 
   revalidatePath(`/clients/${clientId}`);
 

@@ -10,7 +10,9 @@ import { getClientRequestsForUser } from "@/services/client-request.service";
 import { ClientRequests } from "./client-requests";
 import { ComplianceChecklist } from "./compliance-checklist";
 import { GenerateComplianceButton } from "./generate-compliance-button";
+import { getClientPortalAccessForUser } from "@/services/client-invitation.service";
 
+import { PortalAccess } from "./portal-access";
 type ClientDetailPageProps = {
   params: Promise<{
     id: string;
@@ -39,12 +41,17 @@ export default async function ClientDetailPage({
     notFound();
   }
 
-  const [requirements, requests] = await Promise.all([
+  const [requirements, requests, portalData] =
+  await Promise.all([
     getClientRequirementsForUser(
       session.user.id,
       id,
     ),
     getClientRequestsForUser(
+      session.user.id,
+      id,
+    ),
+    getClientPortalAccessForUser(
       session.user.id,
       id,
     ),
@@ -210,7 +217,38 @@ export default async function ClientDetailPage({
           requirements={requirements}
         />
       </section>
-
+<PortalAccess
+  clientId={id}
+  email={portalData.email}
+  portalAccess={
+    portalData.portalAccess
+      ? {
+          status: portalData.portalAccess.status,
+          invitedAt:
+            portalData.portalAccess.invitedAt,
+          activatedAt:
+            portalData.portalAccess.activatedAt,
+          disabledAt:
+            portalData.portalAccess.disabledAt,
+        }
+      : null
+  }
+  latestInvitation={
+    portalData.latestInvitation
+      ? {
+          id: portalData.latestInvitation.id,
+          status:
+            portalData.latestInvitation.status,
+          email:
+            portalData.latestInvitation.email,
+          sentAt:
+            portalData.latestInvitation.sentAt,
+          expiresAt:
+            portalData.latestInvitation.expiresAt,
+        }
+      : null
+  }
+/>
       <ClientRequests
         clientId={id}
         requirements={requestRequirementOptions}

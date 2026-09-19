@@ -117,6 +117,11 @@ enum ClientRequestStatus {
   CANCELLED
 }
 
+enum ClientResponseStatus {
+  DRAFT
+  SUBMITTED
+}
+
 enum ClientPortalAccessStatus {
   NOT_INVITED
   INVITED
@@ -425,6 +430,7 @@ model ClientRequest {
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   clientRequirement ClientRequirement @relation(fields: [clientRequirementId], references: [id], onDelete: Cascade)
+  responses         ClientResponse[]
 
   @@index([clientId])
   @@index([clientId, status])
@@ -482,4 +488,25 @@ model ClientInvitation {
   @@index([email])
   @@index([expiresAt])
   @@map("client_invitation")
+}
+
+model ClientResponse {
+  id String @id @default(cuid())
+
+  clientRequestId String
+
+  status ClientResponseStatus @default(DRAFT)
+
+  informationText String?
+
+  submittedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clientRequest ClientRequest @relation(fields: [clientRequestId], references: [id], onDelete: Cascade)
+
+  @@index([clientRequestId])
+  @@index([clientRequestId, status])
+  @@map("client_response")
 }

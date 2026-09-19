@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
@@ -68,6 +69,15 @@ export default async function ClientPortalPage() {
         Your secure portal has been activated
         successfully.
       </p>
+      <div
+  style={{
+    marginTop: 24,
+  }}
+>
+  <Link href="/portal/requests">
+    View Requests
+  </Link>
+</div>
     </main>
   );
 }

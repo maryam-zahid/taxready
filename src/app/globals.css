@@ -1,26 +1,344 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+
+    /* TaxReady structural breakpoints */
+  --breakpoint-tablet: 48.75rem; /* 780px */
+  --breakpoint-desktop: 80rem;   /* 1280px */
+  --breakpoint-wide: 96rem;      /* 1536px */
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-muted: var(--info-muted);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(
+    --sidebar-primary-foreground
+  );
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(
+    --sidebar-accent-foreground
+  );
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /*
+   * TaxReady
+   * Clean blue + white + charcoal.
+   *
+   * Blue is reserved for brand/action/information.
+   * Green is reserved for successful/completed/readiness states.
+   */
+
+  --background: #f7f9fb;
+  --foreground: #202124;
+
+  --card: #ffffff;
+  --card-foreground: #202124;
+
+  --popover: #ffffff;
+  --popover-foreground: #202124;
+
+  --primary: #2f80ed;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f3f6f9;
+  --secondary-foreground: #202124;
+
+  --muted: #f3f6f9;
+  --muted-foreground: #66717f;
+
+  --accent: #eef6ff;
+  --accent-foreground: #1767b0;
+
+  --destructive: #c63f3f;
+
+  --border: #e4e8ed;
+ --border: #dfe4ea;
+  --ring: #2f80ed;
+
+  /*
+   * Semantic states.
+   * These should communicate meaning rather than decoration.
+   */
+
+  --success: #16875d;
+  --success-foreground: #116947;
+  --success-muted: #eaf8f1;
+
+  --warning: #b7791f;
+  --warning-foreground: #8d5b16;
+  --warning-muted: #fff7e7;
+
+  --info: #2f80ed;
+  --info-foreground: #1767b0;
+  --info-muted: #eef6ff;
+
+  /*
+   * Charts / future readiness analytics.
+   */
+
+  --chart-1: #2f80ed;
+  --chart-2: #16875d;
+  --chart-3: #8b5cf6;
+  --chart-4: #d99024;
+  --chart-5: #d45757;
+
+  /*
+   * Slightly restrained radius.
+   * SaaS UI should feel polished, not overly bubbly.
+   */
+
+  --radius: 0.625rem;
+
+  /*
+   * Admin sidebar.
+   */
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #3f4752;
+
+  --sidebar-primary: #2f80ed;
+  --sidebar-primary-foreground: #ffffff;
+
+  --sidebar-accent: #eef6ff;
+  --sidebar-accent-foreground: #1767b0;
+
+  --sidebar-border: #e4e8ed;
+  --sidebar-ring: #2f80ed;
+}
+
+/*
+ * Dark tokens remain available for future use.
+ * TaxReady MVP itself will use the light interface.
+ */
+
+.dark {
+  --background: #111827;
+  --foreground: #f8fafc;
+
+  --card: #18202c;
+  --card-foreground: #f8fafc;
+
+  --popover: #18202c;
+  --popover-foreground: #f8fafc;
+
+  --primary: #5a9cf2;
+  --primary-foreground: #ffffff;
+
+  --secondary: #222c39;
+  --secondary-foreground: #f8fafc;
+
+  --muted: #222c39;
+  --muted-foreground: #aeb8c5;
+
+  --accent: #1c3654;
+  --accent-foreground: #d8eaff;
+
+  --destructive: #e26363;
+
+  --border: rgb(255 255 255 / 10%);
+  --input: rgb(255 255 255 / 15%);
+  --ring: #5a9cf2;
+
+  --success: #4bc38b;
+  --success-foreground: #bff1d8;
+  --success-muted: #173c2d;
+
+  --warning: #e5ad50;
+  --warning-foreground: #ffe0a8;
+  --warning-muted: #47361a;
+
+  --info: #5a9cf2;
+  --info-foreground: #d8eaff;
+  --info-muted: #1c3654;
+
+  --chart-1: #5a9cf2;
+  --chart-2: #4bc38b;
+  --chart-3: #a78bfa;
+  --chart-4: #e5ad50;
+  --chart-5: #e26363;
+
+  --sidebar: #18202c;
+  --sidebar-foreground: #e7ebf0;
+
+  --sidebar-primary: #5a9cf2;
+  --sidebar-primary-foreground: #ffffff;
+
+  --sidebar-accent: #1c3654;
+  --sidebar-accent-foreground: #d8eaff;
+
+  --sidebar-border: rgb(255 255 255 / 10%);
+  --sidebar-ring: #5a9cf2;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    min-width: 320px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    transition:
+      color 150ms cubic-bezier(0.2, 0, 0, 1),
+      background-color 150ms cubic-bezier(0.2, 0, 0, 1),
+      border-color 150ms cubic-bezier(0.2, 0, 0, 1),
+      box-shadow 150ms cubic-bezier(0.2, 0, 0, 1),
+      opacity 150ms cubic-bezier(0.2, 0, 0, 1),
+      transform 150ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  ::selection {
+    background: rgb(47 128 237 / 18%);
+    color: #202124;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /*
+   * Shared application page container.
+   */
+
+  .app-page {
+    @apply mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8;
+  }
+
+  /*
+   * Shared page heading.
+   */
+
+  .page-title {
+    @apply text-[26px] leading-[1.2] font-semibold tracking-[-0.025em] text-foreground sm:text-[30px];
+  }
+
+  .page-description {
+    @apply mt-1.5 max-w-3xl text-sm leading-6 text-muted-foreground;
+  }
+
+  /*
+   * TaxReady cards are deliberately restrained.
+   */
+
+  .taxready-card {
+    @apply rounded-xl border bg-card text-card-foreground shadow-[0_1px_2px_rgba(15,23,42,0.03)];
+  }
+
+  /*
+   * Optional interactive card.
+   * Only use this when the entire card is clickable.
+   */
+
+  .taxready-card-interactive {
+    @apply transition-[transform,box-shadow,border-color] duration-200 ease-out;
+  }
+
+  .taxready-card-interactive:hover {
+    @apply -translate-y-0.5 border-[#d3d9e0] shadow-[0_8px_24px_rgba(15,23,42,0.07)];
+  }
+
+  /*
+   * Consistent focus ring for custom interactive controls.
+   */
+
+  .taxready-focus {
+    @apply focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:outline-none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

@@ -54,9 +54,15 @@ export async function getClientForUser(
       id: clientId,
       organizationId,
     },
+    include: {
+      taxProfile: {
+        select: {
+          id: true,
+        },
+      },
+    },
   });
 }
-
 export async function createClientForUser(
   userId: string,
   input: ClientInput

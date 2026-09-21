@@ -2,7 +2,16 @@
 
 import { FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import {
+  FileText,
+  Info,
+  Loader2,
+  XCircle,
+} from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { DocumentUploadForm } from "./document-upload-form";
 import {
   markNotAvailableAction,
   submitInformationResponseAction,
@@ -30,12 +39,13 @@ export function RequestResponseForm({
   const [showInformation, setShowInformation] =
     useState(responseType === "INFORMATION");
 
+  const [showDocumentUpload, setShowDocumentUpload] =
+    useState(responseType === "DOCUMENT");
+
   const [showNotAvailable, setShowNotAvailable] =
     useState(false);
 
-  const [error, setError] = useState<string | null>(
-    null,
-  );
+  const [error, setError] = useState<string | null>(null);
 
   const [isPending, startTransition] =
     useTransition();
@@ -64,8 +74,8 @@ export function RequestResponseForm({
         );
 
         router.refresh();
-      } catch (error) {
-        console.error(error);
+      } catch (submitError) {
+        console.error(submitError);
 
         setError(
           "We could not submit your response. Please try again.",
@@ -98,8 +108,8 @@ export function RequestResponseForm({
         );
 
         router.refresh();
-      } catch (error) {
-        console.error(error);
+      } catch (submitError) {
+        console.error(submitError);
 
         setError(
           "We could not submit your response. Please try again.",
@@ -108,122 +118,135 @@ export function RequestResponseForm({
     });
   }
 
+  function showDocumentOption() {
+    setError(null);
+    setShowNotAvailable(false);
+    setShowInformation(false);
+    setShowDocumentUpload(true);
+  }
+
+  function showInformationOption() {
+    setError(null);
+    setShowNotAvailable(false);
+    setShowDocumentUpload(false);
+    setShowInformation(true);
+  }
+
+  function showNotAvailableOption() {
+    setError(null);
+    setShowInformation(false);
+    setShowDocumentUpload(false);
+    setShowNotAvailable(true);
+  }
+
   return (
-    <div
-      style={{
-        display: "grid",
-        gap: 20,
-      }}
-    >
-      {responseType === "DOCUMENT" && (
-        <div>
-          <p>
-            Upload the document requested by your tax
-            practice.
-          </p>
-
-          <button type="button" disabled>
-            Upload Document
-          </button>
-
-          <p
-            style={{
-              marginBottom: 0,
-              fontSize: 14,
-            }}
-          >
-            Secure document upload will be available
-            in the next step.
-          </p>
-        </div>
-      )}
-
+    <div className="space-y-6">
       {responseType === "DOCUMENT_OR_INFORMATION" &&
-        !showInformation && (
-          <div>
-            <p>
-              You can upload supporting documentation
-              or provide the requested information
-              directly.
-            </p>
+        !showInformation &&
+        !showDocumentUpload &&
+        !showNotAvailable && (
+          <div className="space-y-4">
+            <div>
+              <p className="font-medium">
+                Choose how you would like to respond
+              </p>
 
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
-              <button type="button" disabled>
-                Upload Document
-              </button>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Upload the requested supporting document or
+                provide the information directly.
+              </p>
+            </div>
 
-              <button
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
                 type="button"
-                onClick={() => {
-                  setError(null);
-                  setShowNotAvailable(false);
-                  setShowInformation(true);
-                }}
+                onClick={showDocumentOption}
                 disabled={isPending}
               >
-                Provide Information
-              </button>
+                <FileText className="size-4" />
+                Upload document
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={showInformationOption}
+                disabled={isPending}
+              >
+                <Info className="size-4" />
+                Provide information
+              </Button>
             </div>
           </div>
         )}
 
-      {(responseType === "INFORMATION" ||
-        showInformation) && (
-        <form onSubmit={submitInformation}>
-          <label
-            htmlFor="information-response"
-            style={{
-              display: "block",
-              marginBottom: 8,
-              fontWeight: 600,
-            }}
-          >
-            Your response
-          </label>
+      {showDocumentUpload && !showNotAvailable && (
+        <div className="space-y-4">
+          <DocumentUploadForm requestId={requestId} />
 
-          <textarea
-            id="information-response"
-            value={informationText}
-            onChange={(event) =>
-              setInformationText(event.target.value)
-            }
-            rows={7}
-            disabled={isPending}
-            placeholder="Provide the requested information..."
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              padding: 12,
-              resize: "vertical",
-            }}
-          />
-
-          <div
-            style={{
-              marginTop: 12,
-              display: "flex",
-              gap: 12,
-            }}
-          >
-            <button
-              type="submit"
+          {responseType === "DOCUMENT_OR_INFORMATION" && (
+            <Button
+              type="button"
+              variant="ghost"
               disabled={isPending}
+              onClick={() => {
+                setError(null);
+                setShowDocumentUpload(false);
+              }}
             >
-              {isPending
-                ? "Submitting..."
-                : "Submit Response"}
-            </button>
+              Cancel
+            </Button>
+          )}
+        </div>
+      )}
+
+      {showInformation && !showNotAvailable && (
+        <form
+          onSubmit={submitInformation}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <label
+              htmlFor="information-response"
+              className="text-sm font-medium"
+            >
+              Your response
+            </label>
+
+            <Textarea
+              id="information-response"
+              value={informationText}
+              onChange={(event) =>
+                setInformationText(event.target.value)
+              }
+              rows={7}
+              disabled={isPending}
+              placeholder="Provide the requested information..."
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
+              type="submit"
+              disabled={
+                isPending || !informationText.trim()
+              }
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit response"
+              )}
+            </Button>
 
             {responseType ===
               "DOCUMENT_OR_INFORMATION" && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 disabled={isPending}
                 onClick={() => {
                   setError(null);
@@ -231,102 +254,97 @@ export function RequestResponseForm({
                 }}
               >
                 Cancel
-              </button>
+              </Button>
             )}
           </div>
         </form>
       )}
 
-      <div
-        style={{
-          paddingTop: 20,
-          borderTop: "1px solid #e5e7eb",
-        }}
-      >
+      <div className="border-t pt-5">
         {!showNotAvailable ? (
-          <>
-            <p
-              style={{
-                marginTop: 0,
-              }}
-            >
-              Can&apos;t provide this item?
-            </p>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium">
+                Can&apos;t provide this item?
+              </p>
 
-            <button
+              <p className="mt-1 text-sm text-muted-foreground">
+                Let your tax practice know why this item
+                cannot be provided.
+              </p>
+            </div>
+
+            <Button
               type="button"
+              variant="outline"
               disabled={isPending}
-              onClick={() => {
-                setError(null);
-                setShowInformation(false);
-                setShowNotAvailable(true);
-              }}
+              onClick={showNotAvailableOption}
             >
-              Mark as Not Available
-            </button>
-          </>
+              <XCircle className="size-4" />
+              Mark as not available
+            </Button>
+          </div>
         ) : (
-          <form onSubmit={submitNotAvailable}>
-            <label
-              htmlFor="not-available-reason"
-              style={{
-                display: "block",
-                marginBottom: 8,
-                fontWeight: 600,
-              }}
-            >
-              Why is this item not available?
-            </label>
-
-            <textarea
-              id="not-available-reason"
-              value={reason}
-              onChange={(event) =>
-                setReason(event.target.value)
-              }
-              rows={4}
-              disabled={isPending}
-              placeholder="For example: My employer has not provided this document yet."
-              style={{
-                width: "100%",
-                boxSizing: "border-box",
-                padding: 12,
-                resize: "vertical",
-              }}
-            />
-
-            <div
-              style={{
-                marginTop: 12,
-                display: "flex",
-                gap: 12,
-              }}
-            >
-              <button
-                type="submit"
-                disabled={isPending}
+          <form
+            onSubmit={submitNotAvailable}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <label
+                htmlFor="not-available-reason"
+                className="text-sm font-medium"
               >
-                {isPending
-                  ? "Submitting..."
-                  : "Submit as Not Available"}
-              </button>
+                Why is this item not available?
+              </label>
 
-              <button
+              <Textarea
+                id="not-available-reason"
+                value={reason}
+                onChange={(event) =>
+                  setReason(event.target.value)
+                }
+                rows={4}
+                disabled={isPending}
+                placeholder="For example: My employer has not provided this document yet."
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                type="submit"
+                disabled={
+                  isPending || !reason.trim()
+                }
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit as not available"
+                )}
+              </Button>
+
+              <Button
                 type="button"
+                variant="outline"
                 disabled={isPending}
                 onClick={() => {
                   setError(null);
                   setShowNotAvailable(false);
 
-                  if (
-                    responseType === "INFORMATION"
-                  ) {
+                  if (responseType === "INFORMATION") {
                     setShowInformation(true);
+                  }
+
+                  if (responseType === "DOCUMENT") {
+                    setShowDocumentUpload(true);
                   }
                 }}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
         )}
@@ -335,9 +353,7 @@ export function RequestResponseForm({
       {error && (
         <p
           role="alert"
-          style={{
-            margin: 0,
-          }}
+          className="text-sm text-destructive"
         >
           {error}
         </p>

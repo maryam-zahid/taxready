@@ -136,6 +136,18 @@ enum ClientInvitationStatus {
   REVOKED
 }
 
+enum DocumentStatus {
+  UPLOADED
+  NEEDS_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum DocumentSource {
+  CLIENT_PORTAL
+  ADMIN
+}
+
 model User {
   id                      String               @id
   name                    String
@@ -232,8 +244,9 @@ model Organization {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  members OrganizationMember[]
-  clients Client[]
+  members   OrganizationMember[]
+  clients   Client[]
+  documents Document[]
 
   @@map("organization")
 }
@@ -287,6 +300,7 @@ model Client {
   requests     ClientRequest[]
   portalAccess ClientPortalAccess?
   invitations  ClientInvitation[]
+  documents    Document[]
 
   @@index([organizationId])
   @@index([organizationId, type])
@@ -398,6 +412,7 @@ model ClientRequirement {
   client                Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
   requirementDefinition RequirementDefinition @relation(fields: [requirementDefinitionId], references: [id])
   requests              ClientRequest[]
+  documents             Document[]
 
   @@unique([clientId, requirementDefinitionId, taxYear])
   @@index([clientId])
@@ -431,6 +446,7 @@ model ClientRequest {
 
   clientRequirement ClientRequirement @relation(fields: [clientRequirementId], references: [id], onDelete: Cascade)
   responses         ClientResponse[]
+  documents         Document[]
 
   @@index([clientId])
   @@index([clientId, status])
@@ -509,4 +525,42 @@ model ClientResponse {
   @@index([clientRequestId])
   @@index([clientRequestId, status])
   @@map("client_response")
+}
+
+model Document {
+  id                  String  @id @default(cuid())
+  organizationId      String
+  clientId            String
+  clientRequestId     String?
+  clientRequirementId String?
+
+  fileName   String
+  storageKey String @unique
+  mimeType   String
+  sizeBytes  Int
+  sha256Hash String
+
+  status DocumentStatus @default(UPLOADED)
+  source DocumentSource @default(CLIENT_PORTAL)
+
+  uploadedByUserId String
+  uploadedAt       DateTime  @default(now())
+  reviewedAt       DateTime?
+  reviewNote       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientRequest     ClientRequest?     @relation(fields: [clientRequestId], references: [id], onDelete: SetNull)
+  clientRequirement ClientRequirement? @relation(fields: [clientRequirementId], references: [id], onDelete: SetNull)
+
+  @@unique([clientId, sha256Hash])
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([clientRequestId])
+  @@index([clientRequirementId])
+  @@index([clientId, status])
+  @@map("document")
 }

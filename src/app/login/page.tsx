@@ -55,8 +55,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/onboarding/profile");
-    router.refresh();
+   router.push("/dashboard");
+   router.refresh();
   };
 
   return (

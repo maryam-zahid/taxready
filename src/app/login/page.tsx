@@ -15,9 +15,7 @@ const loginSchema = z.object({
     .min(1, "Email is required")
     .email("Enter a valid email address"),
 
-  password: z
-    .string()
-    .min(1, "Password is required"),
+  password: z.string().min(1, "Password is required"),
 });
 
 type LoginInput = z.infer<typeof loginSchema>;
@@ -49,23 +47,35 @@ export default function LoginPage() {
     });
 
     if (result.error) {
+      setServerError(result.error.message || "Invalid email or password.");
+      return;
+    }
+
+    const routingResponse = await fetch("/api/auth/post-login", {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!routingResponse.ok) {
       setServerError(
-        result.error.message || "Invalid email or password."
+        "Signed in successfully, but we could not open your workspace.",
       );
       return;
     }
 
-   router.push("/dashboard");
-   router.refresh();
+    const routingData = (await routingResponse.json()) as {
+      redirectTo: string;
+    };
+
+    router.replace(routingData.redirectTo);
+    router.refresh();
   };
 
   return (
     <main className="min-h-screen bg-white px-6 py-12">
       <div className="mx-auto max-w-md">
         <div className="mb-10">
-          <p className="text-xl font-semibold text-black">
-            TaxReady
-          </p>
+          <p className="text-xl font-semibold text-black">TaxReady</p>
         </div>
 
         <section>
@@ -77,10 +87,7 @@ export default function LoginPage() {
             Sign in to continue to your TaxReady workspace.
           </p>
 
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="mt-8 space-y-5"
-          >
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
             <div>
               <label
                 htmlFor="email"

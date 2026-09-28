@@ -39,14 +39,38 @@ export const taxEvidenceTypeValues = [
   "OTHER_TAX_DEDUCTED",
 ] as const;
 
+const optionalMoneySchema = z
+  .number()
+  .finite()
+  .nonnegative("Amount cannot be negative")
+  .nullable();
+
+const declaredIncomeAmountSchema = z.object({
+  type: z.enum(incomeSourceTypeValues),
+
+  declaredAmount: z
+    .number()
+    .finite()
+    .nonnegative(
+      "Declared amount cannot be negative",
+    )
+    .nullable(),
+});
+
 export const clientTaxProfileSchema = z.object({
-  filingHistoryStatus: z.enum(filingHistoryStatusValues),
+  filingHistoryStatus: z.enum(
+    filingHistoryStatusValues,
+  ),
 
   previousTaxReturnAvailable: z.boolean(),
   previousWealthStatementAvailable: z.boolean(),
 
   incomeSources: z
     .array(z.enum(incomeSourceTypeValues))
+    .default([]),
+
+  declaredIncomeAmounts: z
+    .array(declaredIncomeAmountSchema)
     .default([]),
 
   assetTypes: z
@@ -60,12 +84,17 @@ export const clientTaxProfileSchema = z.object({
   hasLiabilities: z.boolean(),
   hasMultipleEmployers: z.boolean(),
 
+  openingWealth: optionalMoneySchema,
+  wealthAdditions: optionalMoneySchema,
+  wealthReductions: optionalMoneySchema,
+  closingWealth: optionalMoneySchema,
+
   internalNotes: z
     .string()
     .trim()
     .max(
       2000,
-      "Internal notes cannot exceed 2000 characters"
+      "Internal notes cannot exceed 2000 characters",
     ),
 });
 

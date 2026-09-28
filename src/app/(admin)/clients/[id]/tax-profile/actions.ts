@@ -1,10 +1,17 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 import { auth } from "@/lib/auth";
+
 import { clientTaxProfileSchema } from "@/lib/validations/client-tax-profile";
+
+import { getOrganizationForUser } from "@/services/organization.service";
+
 import { saveClientTaxProfileForUser } from "@/services/client-tax-profile.service";
+
+import { reconcileWealthMovement } from "@/services/reconciliation.service";
 
 export type SaveTaxProfileActionResult = {
   success: boolean;
@@ -13,7 +20,7 @@ export type SaveTaxProfileActionResult = {
 
 export async function saveTaxProfileAction(
   clientId: string,
-  input: unknown
+  input: unknown,
 ): Promise<SaveTaxProfileActionResult> {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -26,7 +33,8 @@ export async function saveTaxProfileAction(
     };
   }
 
-  const parsed = clientTaxProfileSchema.safeParse(input);
+  const parsed =
+    clientTaxProfileSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
@@ -38,18 +46,53 @@ export async function saveTaxProfileAction(
   }
 
   try {
+    const organization =
+      await getOrganizationForUser(
+        session.user.id,
+      );
+
+    if (!organization) {
+      return {
+        success: false,
+        message:
+          "Your practice setup could not be found.",
+      };
+    }
+
     await saveClientTaxProfileForUser(
       session.user.id,
       clientId,
-      parsed.data
+      parsed.data,
     );
+
+    await reconcileWealthMovement({
+      organizationId: organization.id,
+      clientId,
+      performedByUserId:
+        session.user.id,
+    });
+
+    revalidatePath(
+      `/clients/${clientId}`,
+    );
+
+    revalidatePath(
+      `/clients/${clientId}/tax-profile`,
+    );
+
+    revalidatePath("/exceptions");
+    revalidatePath("/dashboard");
 
     return {
       success: true,
-      message: "Tax profile saved successfully.",
+      message:
+        "Tax profile saved successfully.",
     };
   } catch (error) {
-    console.error("Failed to save tax profile:", error);
+    console.error(
+      "Failed to save tax profile:",
+      error,
+    );
 
     if (
       error instanceof Error &&
@@ -57,23 +100,27 @@ export async function saveTaxProfileAction(
     ) {
       return {
         success: false,
-        message: "Client could not be found.",
+        message:
+          "Client could not be found.",
       };
     }
 
     if (
       error instanceof Error &&
-      error.message === "ORGANIZATION_NOT_FOUND"
+      error.message ===
+        "ORGANIZATION_NOT_FOUND"
     ) {
       return {
         success: false,
-        message: "Your practice setup could not be found.",
+        message:
+          "Your practice setup could not be found.",
       };
     }
 
     return {
       success: false,
-      message: "Unable to save tax profile. Please try again.",
+      message:
+        "Unable to save tax profile. Please try again.",
     };
   }
 }

@@ -158,11 +158,24 @@ type TaxProfileInitialData = {
   filingHistoryStatus: FilingHistoryStatus;
   previousTaxReturnAvailable: boolean;
   previousWealthStatementAvailable: boolean;
+
   incomeSources: IncomeSourceType[];
+
+  declaredIncomeAmounts?: Partial<
+    Record<IncomeSourceType, number | null>
+  >;
+
   assetTypes: AssetType[];
   taxEvidenceTypes: TaxEvidenceType[];
+
   hasLiabilities: boolean;
   hasMultipleEmployers: boolean;
+
+  openingWealth?: number | null;
+  wealthAdditions?: number | null;
+  wealthReductions?: number | null;
+  closingWealth?: number | null;
+
   internalNotes: string;
 };
 
@@ -170,6 +183,26 @@ type TaxProfileFormProps = {
   clientId: string;
   initialData?: TaxProfileInitialData | null;
 };
+
+function initialMoneyValue(
+  value: number | null | undefined,
+) {
+  return value === null || value === undefined
+    ? ""
+    : String(value);
+}
+
+function parseOptionalMoney(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const parsed = Number(trimmed);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 export function TaxProfileForm({
   clientId,
@@ -179,26 +212,54 @@ export function TaxProfileForm({
 
   const [filingHistoryStatus, setFilingHistoryStatus] =
     useState<FilingHistoryStatus>(
-      initialData?.filingHistoryStatus ?? "NEW_FILER"
+      initialData?.filingHistoryStatus ?? "NEW_FILER",
     );
 
   const [
     previousTaxReturnAvailable,
     setPreviousTaxReturnAvailable,
   ] = useState(
-    initialData?.previousTaxReturnAvailable ?? false
+    initialData?.previousTaxReturnAvailable ?? false,
   );
 
   const [
     previousWealthStatementAvailable,
     setPreviousWealthStatementAvailable,
   ] = useState(
-    initialData?.previousWealthStatementAvailable ?? false
+    initialData?.previousWealthStatementAvailable ??
+      false,
   );
 
   const [incomeSources, setIncomeSources] = useState<
     IncomeSourceType[]
   >(initialData?.incomeSources ?? []);
+
+  const [
+    declaredIncomeAmounts,
+    setDeclaredIncomeAmounts,
+  ] = useState<
+    Partial<Record<IncomeSourceType, string>>
+  >(() => {
+    const values: Partial<
+      Record<IncomeSourceType, string>
+    > = {};
+
+    for (const source of incomeSourceOptions) {
+      const amount =
+        initialData?.declaredIncomeAmounts?.[
+          source.value
+        ];
+
+      if (
+        amount !== null &&
+        amount !== undefined
+      ) {
+        values[source.value] = String(amount);
+      }
+    }
+
+    return values;
+  });
 
   const [assetTypes, setAssetTypes] = useState<
     AssetType[]
@@ -206,22 +267,43 @@ export function TaxProfileForm({
 
   const [taxEvidenceTypes, setTaxEvidenceTypes] =
     useState<TaxEvidenceType[]>(
-      initialData?.taxEvidenceTypes ?? []
+      initialData?.taxEvidenceTypes ?? [],
     );
 
   const [hasLiabilities, setHasLiabilities] =
-    useState(initialData?.hasLiabilities ?? false);
+    useState(
+      initialData?.hasLiabilities ?? false,
+    );
 
   const [
     hasMultipleEmployers,
     setHasMultipleEmployers,
   ] = useState(
-    initialData?.hasMultipleEmployers ?? false
+    initialData?.hasMultipleEmployers ?? false,
   );
 
-  const [internalNotes, setInternalNotes] = useState(
-    initialData?.internalNotes ?? ""
-  );
+  const [openingWealth, setOpeningWealth] =
+    useState(
+      initialMoneyValue(initialData?.openingWealth),
+    );
+
+  const [wealthAdditions, setWealthAdditions] =
+    useState(
+      initialMoneyValue(initialData?.wealthAdditions),
+    );
+
+  const [wealthReductions, setWealthReductions] =
+    useState(
+      initialMoneyValue(initialData?.wealthReductions),
+    );
+
+  const [closingWealth, setClosingWealth] =
+    useState(
+      initialMoneyValue(initialData?.closingWealth),
+    );
+
+  const [internalNotes, setInternalNotes] =
+    useState(initialData?.internalNotes ?? "");
 
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -231,20 +313,20 @@ export function TaxProfileForm({
     value: T,
     setter: React.Dispatch<
       React.SetStateAction<T[]>
-    >
+    >,
   ) {
     setter(
       currentValues.includes(value)
         ? currentValues.filter(
             (currentValue) =>
-              currentValue !== value
+              currentValue !== value,
           )
-        : [...currentValues, value]
+        : [...currentValues, value],
     );
   }
 
   async function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>
+    event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
@@ -257,13 +339,44 @@ export function TaxProfileForm({
         filingHistoryStatus,
         previousTaxReturnAvailable,
         previousWealthStatementAvailable,
+
         incomeSources,
+
+        declaredIncomeAmounts:
+          incomeSources.map((type) => {
+            const rawValue =
+              declaredIncomeAmounts[type]?.trim();
+
+            return {
+              type,
+              declaredAmount:
+                rawValue &&
+                Number.isFinite(Number(rawValue))
+                  ? Number(rawValue)
+                  : null,
+            };
+          }),
+
         assetTypes,
         taxEvidenceTypes,
+
         hasLiabilities,
         hasMultipleEmployers,
+
+        openingWealth:
+          parseOptionalMoney(openingWealth),
+
+        wealthAdditions:
+          parseOptionalMoney(wealthAdditions),
+
+        wealthReductions:
+          parseOptionalMoney(wealthReductions),
+
+        closingWealth:
+          parseOptionalMoney(closingWealth),
+
         internalNotes,
-      }
+      },
     );
 
     setIsSaving(false);
@@ -296,7 +409,7 @@ export function TaxProfileForm({
               }
               onChange={() =>
                 setFilingHistoryStatus(
-                  "NEW_FILER"
+                  "NEW_FILER",
                 )
               }
             />{" "}
@@ -313,7 +426,7 @@ export function TaxProfileForm({
               }
               onChange={() =>
                 setFilingHistoryStatus(
-                  "EXISTING_FILER"
+                  "EXISTING_FILER",
                 )
               }
             />{" "}
@@ -330,7 +443,7 @@ export function TaxProfileForm({
               }
               onChange={() =>
                 setFilingHistoryStatus(
-                  "PREVIOUS_RETURN_UNAVAILABLE"
+                  "PREVIOUS_RETURN_UNAVAILABLE",
                 )
               }
             />{" "}
@@ -347,7 +460,7 @@ export function TaxProfileForm({
               }
               onChange={(event) =>
                 setPreviousTaxReturnAvailable(
-                  event.target.checked
+                  event.target.checked,
                 )
               }
             />{" "}
@@ -362,7 +475,7 @@ export function TaxProfileForm({
               }
               onChange={(event) =>
                 setPreviousWealthStatementAvailable(
-                  event.target.checked
+                  event.target.checked,
                 )
               }
             />{" "}
@@ -377,29 +490,76 @@ export function TaxProfileForm({
         </h2>
 
         <div className="mt-3 space-y-2">
-          {incomeSourceOptions.map(
-            (option) => (
-              <label
+          {incomeSourceOptions.map((option) => {
+            const selected =
+              incomeSources.includes(
+                option.value,
+              );
+
+            return (
+              <div
                 key={option.value}
-                className="block"
+                className="rounded-lg border p-3"
               >
-                <input
-                  type="checkbox"
-                  checked={incomeSources.includes(
-                    option.value
-                  )}
-                  onChange={() =>
-                    toggleValue(
-                      incomeSources,
-                      option.value,
-                      setIncomeSources
-                    )
-                  }
-                />{" "}
-                {option.label}
-              </label>
-            )
-          )}
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() =>
+                      toggleValue(
+                        incomeSources,
+                        option.value,
+                        setIncomeSources,
+                      )
+                    }
+                  />
+
+                  <span>{option.label}</span>
+                </label>
+
+                {selected ? (
+                  <div className="mt-3 max-w-sm">
+                    <label
+                      htmlFor={`declared-${option.value}`}
+                      className="mb-1 block text-sm font-medium"
+                    >
+                      Declared annual amount (PKR)
+                    </label>
+
+                    <input
+                      id={`declared-${option.value}`}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      value={
+                        declaredIncomeAmounts[
+                          option.value
+                        ] ?? ""
+                      }
+                      onChange={(event) =>
+                        setDeclaredIncomeAmounts(
+                          (current) => ({
+                            ...current,
+                            [option.value]:
+                              event.target.value,
+                          }),
+                        )
+                      }
+                      placeholder="Optional"
+                      className="w-full rounded-md border px-3 py-2 text-sm"
+                    />
+
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Optional. Used to compare
+                      declared income with supporting
+                      documents.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -417,13 +577,13 @@ export function TaxProfileForm({
               <input
                 type="checkbox"
                 checked={assetTypes.includes(
-                  option.value
+                  option.value,
                 )}
                 onChange={() =>
                   toggleValue(
                     assetTypes,
                     option.value,
-                    setAssetTypes
+                    setAssetTypes,
                   )
                 }
               />{" "}
@@ -437,12 +597,117 @@ export function TaxProfileForm({
               checked={hasLiabilities}
               onChange={(event) =>
                 setHasLiabilities(
-                  event.target.checked
+                  event.target.checked,
                 )
               }
             />{" "}
             Liabilities / Loans
           </label>
+        </div>
+
+        <div className="mt-6 rounded-lg border p-4">
+          <div>
+            <h3 className="font-semibold">
+              Wealth Movement
+            </h3>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Optional preparation check. Enter all
+              four values to compare expected closing
+              wealth with the declared closing wealth.
+            </p>
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">
+                Opening wealth (PKR)
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={openingWealth}
+                onChange={(event) =>
+                  setOpeningWealth(
+                    event.target.value,
+                  )
+                }
+                placeholder="Optional"
+                className="w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">
+                Wealth additions (PKR)
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={wealthAdditions}
+                onChange={(event) =>
+                  setWealthAdditions(
+                    event.target.value,
+                  )
+                }
+                placeholder="Optional"
+                className="w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">
+                Wealth reductions (PKR)
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={wealthReductions}
+                onChange={(event) =>
+                  setWealthReductions(
+                    event.target.value,
+                  )
+                }
+                placeholder="Optional"
+                className="w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">
+                Closing wealth (PKR)
+              </span>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={closingWealth}
+                onChange={(event) =>
+                  setClosingWealth(
+                    event.target.value,
+                  )
+                }
+                placeholder="Optional"
+                className="w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+
+          <p className="mt-4 text-xs text-muted-foreground">
+            Expected closing wealth = opening wealth +
+            additions - reductions.
+          </p>
         </div>
       </section>
 
@@ -461,19 +726,19 @@ export function TaxProfileForm({
                 <input
                   type="checkbox"
                   checked={taxEvidenceTypes.includes(
-                    option.value
+                    option.value,
                   )}
                   onChange={() =>
                     toggleValue(
                       taxEvidenceTypes,
                       option.value,
-                      setTaxEvidenceTypes
+                      setTaxEvidenceTypes,
                     )
                   }
                 />{" "}
                 {option.label}
               </label>
-            )
+            ),
           )}
         </div>
       </section>
@@ -489,7 +754,7 @@ export function TaxProfileForm({
             checked={hasMultipleEmployers}
             onChange={(event) =>
               setHasMultipleEmployers(
-                event.target.checked
+                event.target.checked,
               )
             }
           />{" "}
@@ -506,7 +771,7 @@ export function TaxProfileForm({
           value={internalNotes}
           onChange={(event) =>
             setInternalNotes(
-              event.target.value
+              event.target.value,
             )
           }
           rows={5}
@@ -521,16 +786,16 @@ export function TaxProfileForm({
       )}
 
       <button
-        type="submit"
-        disabled={isSaving}
-        className="border px-4 py-2"
-      >
-        {isSaving
-          ? "Saving..."
-          : initialData
-            ? "Update Tax Profile"
-            : "Save Tax Profile"}
-      </button>
+  type="submit"
+  disabled={isSaving}
+  className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-50"
+>
+  {isSaving
+    ? "Saving..."
+    : initialData
+      ? "Update Tax Profile"
+      : "Save Tax Profile"}
+</button>
     </form>
   );
 }

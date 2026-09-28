@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
-import { getClientTaxProfileForUser } from "@/services/client-tax-profile.service";
+import {
+  notFound,
+  redirect,
+} from "next/navigation";
+
 import { auth } from "@/lib/auth";
 import { getClientForUser } from "@/services/client.service";
+import { getClientTaxProfileForUser } from "@/services/client-tax-profile.service";
 
 import { TaxProfileForm } from "./tax-profile-form";
 
@@ -28,17 +32,18 @@ export default async function TaxProfilePage({
 
   const client = await getClientForUser(
     session.user.id,
-    id
+    id,
   );
 
   if (!client) {
     notFound();
   }
+
   const existingProfile =
-  await getClientTaxProfileForUser(
-    session.user.id,
-    client.id
-  );
+    await getClientTaxProfileForUser(
+      session.user.id,
+      client.id,
+    );
 
   const clientName =
     client.type === "INDIVIDUAL"
@@ -79,47 +84,94 @@ export default async function TaxProfilePage({
       </div>
 
       <div className="mt-8">
-       <TaxProfileForm
-  clientId={client.id}
-  initialData={
-    existingProfile
-      ? {
-          filingHistoryStatus:
-            existingProfile.filingHistoryStatus,
+        <TaxProfileForm
+          clientId={client.id}
+          initialData={
+            existingProfile
+              ? {
+                  filingHistoryStatus:
+                    existingProfile.filingHistoryStatus,
 
-          previousTaxReturnAvailable:
-            existingProfile.previousTaxReturnAvailable,
+                  previousTaxReturnAvailable:
+                    existingProfile.previousTaxReturnAvailable,
 
-          previousWealthStatementAvailable:
-            existingProfile.previousWealthStatementAvailable,
+                  previousWealthStatementAvailable:
+                    existingProfile.previousWealthStatementAvailable,
 
-          incomeSources:
-            existingProfile.incomeSources.map(
-              (item) => item.type
-            ),
+                  incomeSources:
+                    existingProfile.incomeSources.map(
+                      (item) => item.type,
+                    ),
 
-          assetTypes:
-            existingProfile.assetTypes.map(
-              (item) => item.type
-            ),
+                  declaredIncomeAmounts:
+                    Object.fromEntries(
+                      existingProfile.incomeSources.map(
+                        (item) => [
+                          item.type,
+                          item.declaredAmount === null
+                            ? null
+                            : Number(
+                                item.declaredAmount,
+                              ),
+                        ],
+                      ),
+                    ),
 
-          taxEvidenceTypes:
-            existingProfile.taxEvidenceTypes.map(
-              (item) => item.type
-            ),
+                  assetTypes:
+                    existingProfile.assetTypes.map(
+                      (item) => item.type,
+                    ),
 
-          hasLiabilities:
-            existingProfile.hasLiabilities,
+                  taxEvidenceTypes:
+                    existingProfile.taxEvidenceTypes.map(
+                      (item) => item.type,
+                    ),
 
-          hasMultipleEmployers:
-            existingProfile.hasMultipleEmployers,
+                  hasLiabilities:
+                    existingProfile.hasLiabilities,
 
-          internalNotes:
-            existingProfile.internalNotes ?? "",
-        }
-      : null
-  }
-/>
+                  hasMultipleEmployers:
+                    existingProfile.hasMultipleEmployers,
+
+                  openingWealth:
+                    existingProfile.openingWealth ===
+                    null
+                      ? null
+                      : Number(
+                          existingProfile.openingWealth,
+                        ),
+
+                  wealthAdditions:
+                    existingProfile.wealthAdditions ===
+                    null
+                      ? null
+                      : Number(
+                          existingProfile.wealthAdditions,
+                        ),
+
+                  wealthReductions:
+                    existingProfile.wealthReductions ===
+                    null
+                      ? null
+                      : Number(
+                          existingProfile.wealthReductions,
+                        ),
+
+                  closingWealth:
+                    existingProfile.closingWealth ===
+                    null
+                      ? null
+                      : Number(
+                          existingProfile.closingWealth,
+                        ),
+
+                  internalNotes:
+                    existingProfile.internalNotes ??
+                    "",
+                }
+              : null
+          }
+        />
       </div>
     </main>
   );

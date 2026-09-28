@@ -11,7 +11,7 @@ import type { ClientTaxProfileInput } from "@/lib/validations/client-tax-profile
 
 async function getAccessibleClient(
   userId: string,
-  clientId: string
+  clientId: string,
 ) {
   const membership =
     await prisma.organizationMember.findFirst({
@@ -50,7 +50,7 @@ async function getAccessibleClient(
 
 export async function getClientTaxProfileForUser(
   userId: string,
-  clientId: string
+  clientId: string,
 ) {
   await getAccessibleClient(userId, clientId);
 
@@ -69,7 +69,7 @@ export async function getClientTaxProfileForUser(
 export async function saveClientTaxProfileForUser(
   userId: string,
   clientId: string,
-  input: ClientTaxProfileInput
+  input: ClientTaxProfileInput,
 ) {
   await getAccessibleClient(userId, clientId);
 
@@ -100,6 +100,15 @@ export async function saveClientTaxProfileForUser(
           hasMultipleEmployers:
             input.hasMultipleEmployers,
 
+          openingWealth:
+            input.openingWealth,
+          wealthAdditions:
+            input.wealthAdditions,
+          wealthReductions:
+            input.wealthReductions,
+          closingWealth:
+            input.closingWealth,
+
           internalNotes:
             input.internalNotes || null,
         },
@@ -121,6 +130,15 @@ export async function saveClientTaxProfileForUser(
 
           hasMultipleEmployers:
             input.hasMultipleEmployers,
+
+          openingWealth:
+            input.openingWealth,
+          wealthAdditions:
+            input.wealthAdditions,
+          wealthReductions:
+            input.wealthReductions,
+          closingWealth:
+            input.closingWealth,
 
           internalNotes:
             input.internalNotes || null,
@@ -146,12 +164,25 @@ export async function saveClientTaxProfileForUser(
     });
 
     if (input.incomeSources.length > 0) {
+      const declaredAmounts = new Map(
+        input.declaredIncomeAmounts.map(
+          (item) => [
+            item.type,
+            item.declaredAmount,
+          ],
+        ),
+      );
+
       await tx.clientIncomeSource.createMany({
         data: input.incomeSources.map(
           (type) => ({
             taxProfileId: taxProfile.id,
             type: IncomeSourceType[type],
-          })
+
+            declaredAmount:
+              declaredAmounts.get(type) ??
+              null,
+          }),
         ),
       });
     }
@@ -162,7 +193,7 @@ export async function saveClientTaxProfileForUser(
           (type) => ({
             taxProfileId: taxProfile.id,
             type: AssetType[type],
-          })
+          }),
         ),
       });
     }
@@ -173,7 +204,7 @@ export async function saveClientTaxProfileForUser(
           (type) => ({
             taxProfileId: taxProfile.id,
             type: TaxEvidenceType[type],
-          })
+          }),
         ),
       });
     }

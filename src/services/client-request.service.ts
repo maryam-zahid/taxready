@@ -97,13 +97,22 @@ requirementDefinition: true,
       dueAt: data.dueAt ?? null,
       status: ClientRequestStatus.DRAFT,
     },
+   include: {
+  clientRequirement: {
     include: {
-      clientRequirement: {
-        include: {
-requirementDefinition: true,
-        },
-      },
+      requirementDefinition: true,
     },
+  },
+  responses: {
+    where: {
+      status: "SUBMITTED",
+    },
+    orderBy: {
+      submittedAt: "desc",
+    },
+    take: 1,
+  },
+},
   });
 }
 
@@ -127,21 +136,30 @@ export async function getClientRequestsForUser(
     throw new Error("CLIENT_NOT_FOUND");
   }
 
-  return prisma.clientRequest.findMany({
-    where: {
-      clientId,
-    },
-    include: {
-      clientRequirement: {
-        include: {
-requirementDefinition: true,
-        },
+ return prisma.clientRequest.findMany({
+  where: {
+    clientId,
+  },
+  include: {
+    clientRequirement: {
+      include: {
+        requirementDefinition: true,
       },
     },
-    orderBy: {
-      createdAt: "desc",
+    responses: {
+      where: {
+        status: "SUBMITTED",
+      },
+      orderBy: {
+        submittedAt: "desc",
+      },
+      take: 1,
     },
-  });
+  },
+  orderBy: {
+    createdAt: "desc",
+  },
+});
 }
 export async function sendClientRequestForUser(
   userId: string,
@@ -208,4 +226,261 @@ export async function sendClientRequestForUser(
 
     return sentRequest;
   });
+}
+
+export async function completeSubmittedInformationRequestForUser(
+  userId: string,
+  clientId: string,
+  requestId: string,
+) {
+  const organizationId =
+    await getOrganizationIdForUser(userId);
+
+  const request =
+    await prisma.clientRequest.findFirst({
+      where: {
+        id: requestId,
+        clientId,
+        client: {
+          organizationId,
+        },
+      },
+      include: {
+        clientRequirement: {
+          include: {
+            requirementDefinition: true,
+          },
+        },
+        responses: {
+          where: {
+            status: "SUBMITTED",
+          },
+          orderBy: {
+            submittedAt: "desc",
+          },
+          take: 1,
+        },
+      },
+    });
+
+  if (!request) {
+    throw new Error("REQUEST_NOT_FOUND");
+  }
+
+  if (
+    request.status !== ClientRequestStatus.SUBMITTED
+  ) {
+    throw new Error("REQUEST_NOT_SUBMITTED");
+  }
+
+  const responseType =
+    request.clientRequirement
+      .requirementDefinition.responseType;
+
+  if (
+    responseType !== "INFORMATION" &&
+    responseType !== "DOCUMENT_OR_INFORMATION"
+  ) {
+    throw new Error(
+      "INFORMATION_RESPONSE_NOT_ALLOWED",
+    );
+  }
+
+  if (request.responses.length === 0) {
+    throw new Error(
+      "SUBMITTED_INFORMATION_RESPONSE_NOT_FOUND",
+    );
+  }
+
+  const now = new Date();
+
+  return prisma.$transaction(async (tx) => {
+    await tx.clientRequirement.update({
+      where: {
+        id: request.clientRequirementId,
+      },
+      data: {
+        status: RequirementStatus.COMPLETED,
+        completedAt: now,
+        waivedAt: null,
+      },
+    });
+
+    return tx.clientRequest.update({
+      where: {
+        id: request.id,
+      },
+      data: {
+        status: ClientRequestStatus.COMPLETED,
+        completedAt: now,
+      },
+    });
+  });
+}
+
+export async function updateClientRequestForUser(
+  userId: string,
+  clientId: string,
+  requestId: string,
+  input: {
+    subject: string;
+    message?: string;
+    dueAt?: Date | null;
+  },
+) {
+  const organizationId =
+    await getOrganizationIdForUser(userId);
+
+  const request =
+    await prisma.clientRequest.findFirst({
+      where: {
+        id: requestId,
+        clientId,
+        client: {
+          organizationId,
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+  if (!request) {
+    throw new Error("REQUEST_NOT_FOUND");
+  }
+
+  if (
+    request.status !== ClientRequestStatus.DRAFT &&
+    request.status !== ClientRequestStatus.SENT &&
+    request.status !== ClientRequestStatus.VIEWED
+  ) {
+    throw new Error("REQUEST_NOT_EDITABLE");
+  }
+
+  const subject = input.subject.trim();
+  const message = input.message?.trim();
+
+  if (!subject) {
+    throw new Error("REQUEST_SUBJECT_REQUIRED");
+  }
+
+  return prisma.clientRequest.update({
+    where: {
+      id: request.id,
+    },
+    data: {
+      subject,
+      message: message || null,
+      dueAt: input.dueAt ?? null,
+    },
+  });
+}
+
+export async function cancelClientRequestForUser(
+  userId: string,
+  clientId: string,
+  requestId: string,
+) {
+  const organizationId =
+    await getOrganizationIdForUser(userId);
+
+  const request =
+    await prisma.clientRequest.findFirst({
+      where: {
+        id: requestId,
+        clientId,
+        client: {
+          organizationId,
+        },
+      },
+      include: {
+        clientRequirement: true,
+      },
+    });
+
+  if (!request) {
+    throw new Error("REQUEST_NOT_FOUND");
+  }
+
+  if (
+    request.status !== ClientRequestStatus.SENT &&
+    request.status !== ClientRequestStatus.VIEWED
+  ) {
+    throw new Error("REQUEST_NOT_CANCELLABLE");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const cancelledRequest =
+      await tx.clientRequest.update({
+        where: {
+          id: request.id,
+        },
+        data: {
+          status: ClientRequestStatus.CANCELLED,
+        },
+      });
+
+    if (
+      request.clientRequirement.status ===
+      RequirementStatus.REQUESTED
+    ) {
+      await tx.clientRequirement.update({
+        where: {
+          id: request.clientRequirementId,
+        },
+        data: {
+          status: RequirementStatus.PENDING,
+        },
+      });
+    }
+
+    return cancelledRequest;
+  });
+}
+
+export async function deleteDraftClientRequestForUser(
+  userId: string,
+  clientId: string,
+  requestId: string,
+) {
+  const organizationId =
+    await getOrganizationIdForUser(userId);
+
+  const request =
+    await prisma.clientRequest.findFirst({
+      where: {
+        id: requestId,
+        clientId,
+        client: {
+          organizationId,
+        },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+  if (!request) {
+    throw new Error("REQUEST_NOT_FOUND");
+  }
+
+  if (
+    request.status !== ClientRequestStatus.DRAFT
+  ) {
+    throw new Error(
+      "ONLY_DRAFT_REQUEST_CAN_BE_DELETED",
+    );
+  }
+
+  await prisma.clientRequest.delete({
+    where: {
+      id: request.id,
+    },
+  });
+
+  return {
+    success: true,
+  };
 }

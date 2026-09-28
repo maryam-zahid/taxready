@@ -29,9 +29,51 @@ export async function submitInformationResponseForUser(
       },
       include: {
         clientRequirement: {
-          include: {
-            requirementDefinition: true,
-          },
+        include: {
+  requirementDefinition: true,
+
+  requests: {
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 1,
+    select: {
+      id: true,
+      status: true,
+      subject: true,
+      dueAt: true,
+      createdAt: true,
+
+      responses: {
+        where: {
+          status: "SUBMITTED",
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+        select: {
+          id: true,
+          informationText: true,
+          submittedAt: true,
+        },
+      },
+    },
+  },
+
+  documents: {
+    orderBy: {
+      uploadedAt: "desc",
+    },
+    take: 1,
+    select: {
+      id: true,
+      fileName: true,
+      status: true,
+      uploadedAt: true,
+    },
+  },
+},
         },
       },
     });

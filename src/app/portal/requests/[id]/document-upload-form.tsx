@@ -7,6 +7,7 @@ import {
   Loader2,
   UploadCloud,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -21,9 +22,17 @@ type DocumentUploadFormProps = {
   requestId: string;
 };
 
+type FinalizeDocumentResponse = {
+  success?: boolean;
+  documentId?: string;
+  error?: string;
+};
+
 export function DocumentUploadForm({
   requestId,
 }: DocumentUploadFormProps) {
+  const router = useRouter();
+
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,38 +89,107 @@ export function DocumentUploadForm({
     setSuccess(false);
 
     try {
-      const sha256Hash = await calculateFileSha256(file);
+      /*
+       * Calculate the document hash before upload.
+       * The backend uses this for duplicate protection.
+       */
+      const sha256Hash =
+        await calculateFileSha256(file);
 
       /*
-       * This is only a temporary client pathname.
-       * The server validates the authenticated request and will
-       * constrain the final upload path in the next backend step.
+       * The pathname contains no tenant identifiers supplied
+       * by the browser. The authenticated server validates
+       * ownership of the request before issuing an upload token.
        */
-     const pathname = [
-  "taxready",
-  "client-uploads",
-  requestId,
-  `${crypto.randomUUID()}-${sanitizeDocumentFileName(file.name)}`,
-].join("/");
+      const pathname = [
+        "taxready",
+        "client-uploads",
+        requestId,
+        `${crypto.randomUUID()}-${sanitizeDocumentFileName(
+          file.name,
+        )}`,
+      ].join("/");
 
-      await upload(pathname, file, {
-        access: "private",
-        handleUploadUrl:
-          "/api/client-portal/documents/upload",
+      /*
+       * Step 1:
+       * Upload the PDF to private Vercel Blob storage.
+       */
+      const uploadedBlob = await upload(
+        pathname,
+        file,
+        {
+          access: "private",
 
-        clientPayload: JSON.stringify({
-          requestId,
-          fileName: file.name,
-          sizeBytes: file.size,
-          sha256Hash,
-        }),
+          handleUploadUrl:
+            "/api/client-portal/documents/upload",
 
-        contentType: "application/pdf",
-        multipart: false,
-      });
+          clientPayload: JSON.stringify({
+            requestId,
+            fileName: file.name,
+            sizeBytes: file.size,
+            sha256Hash,
+          }),
 
+          contentType: "application/pdf",
+          multipart: false,
+        },
+      );
+
+      /*
+       * Step 2:
+       * Explicitly finalize the upload in TaxReady.
+       *
+       * We do not consider the workflow successful merely
+       * because Blob storage accepted the file. The backend
+       * must create the Document and update the request and
+       * requirement workflow states first.
+       */
+      const finalizeResponse = await fetch(
+        "/api/client-portal/documents/finalize",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            requestId,
+            fileName: file.name,
+            storageKey: uploadedBlob.pathname,
+            mimeType:
+              uploadedBlob.contentType ||
+              "application/pdf",
+            sizeBytes: file.size,
+            sha256Hash,
+          }),
+        },
+      );
+
+      const finalizeResult =
+        (await finalizeResponse.json()) as FinalizeDocumentResponse;
+
+      if (!finalizeResponse.ok) {
+        throw new Error(
+          finalizeResult.error ||
+            "DOCUMENT_FINALIZATION_FAILED",
+        );
+      }
+
+      /*
+       * Only show success after TaxReady has confirmed that
+       * the database workflow was finalized successfully.
+       */
       setSuccess(true);
       setFile(null);
+
+      /*
+       * The request is now SUBMITTED, so return to the
+       * request list. Opening it again should show the
+       * read-only submitted state instead of the upload form.
+       */
+      router.replace("/portal/requests");
+      router.refresh();
     } catch (uploadError) {
       console.error(
         "Document upload failed:",
@@ -127,8 +205,29 @@ export function DocumentUploadForm({
         setError(
           "This document has already been uploaded.",
         );
+      } else if (
+        message.includes("REQUEST_NOT_UPLOADABLE") ||
+        message.includes("REQUEST_NOT_FINALIZABLE")
+      ) {
+        setError(
+          "This request can no longer accept document uploads. Please refresh the page.",
+        );
+      } else if (
+        message.includes("INVALID_DOCUMENT_SIZE")
+      ) {
+        setError(
+          "The document size is invalid. PDF must be 10 MB or smaller.",
+        );
+      } else if (
+        message.includes("UNAUTHORIZED")
+      ) {
+        setError(
+          "Your session has expired. Please sign in again.",
+        );
       } else {
-        setError(message);
+        setError(
+          "Document upload could not be completed. Please try again.",
+        );
       }
     } finally {
       setIsUploading(false);
@@ -183,14 +282,12 @@ export function DocumentUploadForm({
       {success ? (
         <div className="flex items-center gap-2 text-sm text-emerald-700">
           <CheckCircle2 className="size-4" />
-
           Document uploaded successfully.
         </div>
       ) : null}
 
       <Button
         type="button"
-        className="w-full sm:w-auto"
         disabled={!file || isUploading}
         onClick={handleUpload}
       >

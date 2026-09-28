@@ -1,4 +1,3 @@
-
 import { prisma } from "@/lib/prisma";
 
 export async function getClientPortalContext(
@@ -9,6 +8,7 @@ export async function getClientPortalContext(
       where: {
         userId,
       },
+
       include: {
         client: {
           select: {
@@ -19,6 +19,7 @@ export async function getClientPortalContext(
             businessName: true,
             email: true,
             taxYear: true,
+
             organization: {
               select: {
                 id: true,
@@ -35,7 +36,9 @@ export async function getClientPortalContext(
   }
 
   if (portalAccess.status !== "ACTIVE") {
-    throw new Error("CLIENT_PORTAL_NOT_ACTIVE");
+    throw new Error(
+      "CLIENT_PORTAL_NOT_ACTIVE",
+    );
   }
 
   return portalAccess;
@@ -51,14 +54,14 @@ export async function getClientPortalRequests(
     where: {
       clientId: portalAccess.clientId,
 
-    status: {
-  in: [
-    "SENT",
-    "VIEWED",
-    "SUBMITTED",
-    "COMPLETED",
-  ],
-},
+      status: {
+        in: [
+          "SENT",
+          "VIEWED",
+          "SUBMITTED",
+          "COMPLETED",
+        ],
+      },
     },
 
     select: {
@@ -72,22 +75,22 @@ export async function getClientPortalRequests(
       submittedAt: true,
       completedAt: true,
 
-     clientRequirement: {
-  select: {
-    id: true,
-    status: true,
-    required: true,
+      clientRequirement: {
+        select: {
+          id: true,
+          status: true,
+          required: true,
 
-    requirementDefinition: {
-      select: {
-        title: true,
-        description: true,
-        category: true,
-        responseType: true,
+          requirementDefinition: {
+            select: {
+              title: true,
+              description: true,
+              category: true,
+              responseType: true,
+            },
+          },
+        },
       },
-    },
-  },
-},
     },
 
     orderBy: [
@@ -112,9 +115,7 @@ export async function getClientPortalRequestById(
       where: {
         id: requestId,
 
-        // Security:
-        // request must belong to the client linked
-        // with the authenticated portal user.
+        // Only allow access to this portal user's client.
         clientId: portalAccess.clientId,
 
         status: {
@@ -156,11 +157,51 @@ export async function getClientPortalRequestById(
             },
           },
         },
+
+        // Information submitted by the client.
+        responses: {
+          where: {
+            status: "SUBMITTED",
+          },
+
+          select: {
+            id: true,
+            informationText: true,
+            submittedAt: true,
+          },
+
+          orderBy: {
+            submittedAt: "desc",
+          },
+        },
+
+        // Documents uploaded by the client for this request.
+        documents: {
+          where: {
+            source: "CLIENT_PORTAL",
+          },
+
+          select: {
+            id: true,
+            fileName: true,
+            sizeBytes: true,
+            status: true,
+            uploadedAt: true,
+            reviewNote: true,
+            reviewedAt: true,
+          },
+
+          orderBy: {
+            uploadedAt: "desc",
+          },
+        },
       },
     });
 
   if (!request) {
-    throw new Error("CLIENT_REQUEST_NOT_FOUND");
+    throw new Error(
+      "CLIENT_REQUEST_NOT_FOUND",
+    );
   }
 
   return request;

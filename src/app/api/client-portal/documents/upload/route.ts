@@ -11,7 +11,6 @@ import {
   DOCUMENT_MAX_SIZE_BYTES,
   sanitizeDocumentFileName,
 } from "@/lib/document-storage";
-import { finalizeClientDocumentUpload } from "@/services/document.service";
 import { prepareDocumentUploadForUser } from "@/services/document-upload.service";
 
 type UploadPayload = {
@@ -136,43 +135,7 @@ export async function POST(request: Request) {
         };
       },
 
-      onUploadCompleted: async ({
-        blob,
-        tokenPayload,
-      }) => {
-        if (!tokenPayload) {
-          throw new Error(
-            "UPLOAD_COMPLETION_PAYLOAD_REQUIRED",
-          );
-        }
-
-        const payload = JSON.parse(
-          tokenPayload,
-        ) as CompletionPayload;
-
-        await finalizeClientDocumentUpload({
-          userId: payload.userId,
-          organizationId: payload.organizationId,
-          clientId: payload.clientId,
-          requestId: payload.requestId,
-          requirementId: payload.requirementId,
-
-          fileName: payload.fileName,
-
-          /*
-           * Blob pathname is our provider-side
-           * storage identifier. We deliberately
-           * do not store a public URL.
-           */
-          storageKey: blob.pathname,
-
-          mimeType:
-            blob.contentType || "application/pdf",
-
-          sizeBytes: payload.sizeBytes,
-          sha256Hash: payload.sha256Hash,
-        });
-      },
+     
     });
 
     return NextResponse.json(result);

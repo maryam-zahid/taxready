@@ -148,6 +148,86 @@ enum DocumentSource {
   ADMIN
 }
 
+enum ExceptionStatus {
+  OPEN
+  WAITING_CLIENT
+  UNDER_REVIEW
+  RESOLVED
+  WAIVED
+}
+
+enum ExceptionSeverity {
+  INFO
+  WARNING
+  BLOCKING
+}
+
+enum ExceptionSource {
+  DOCUMENT_REVIEW
+  VALIDATION
+  RECONCILIATION
+  MANUAL
+}
+
+enum DocumentValidationStatus {
+  PENDING
+  PASSED
+  NEEDS_REVIEW
+}
+
+enum ValidationCheckStatus {
+  PASSED
+  FAILED
+  NOT_CHECKED
+}
+
+enum DocumentExtractionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  NEEDS_REVIEW
+}
+
+enum ExtractedFieldType {
+  TEXT
+  NUMBER
+  MONEY
+  DATE
+  TAX_YEAR
+}
+
+enum TaxReadinessStatus {
+  IN_PROGRESS
+  BLOCKED
+  READY_FOR_REVIEW
+  TAX_READY
+}
+
+enum NotificationAudience {
+  ADMIN
+  CLIENT
+}
+
+enum NotificationType {
+  INFO
+  ACTION_REQUIRED
+  WARNING
+  SUCCESS
+}
+
+enum AuditAction {
+  CLIENT_CREATED
+  REQUEST_SENT
+  INFORMATION_SUBMITTED
+  DOCUMENT_SUBMITTED
+  DOCUMENT_APPROVED
+  DOCUMENT_REJECTED
+  DOCUMENT_NEEDS_REVIEW
+  EXCEPTION_RESOLVED
+  CLIENT_MARKED_TAX_READY
+}
+
 model User {
   id                      String               @id
   name                    String
@@ -244,9 +324,10 @@ model Organization {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  members   OrganizationMember[]
-  clients   Client[]
-  documents Document[]
+  members              OrganizationMember[]
+  clients              Client[]
+  documents            Document[]
+  complianceExceptions ComplianceException[]
 
   @@map("organization")
 }
@@ -289,18 +370,22 @@ model Client {
 
   taxYear              Int
   preparationDeadline  DateTime?
-  sendPortalInvitation Boolean   @default(true)
+  sendPortalInvitation Boolean            @default(true)
+  taxReadinessStatus   TaxReadinessStatus @default(IN_PROGRESS)
+  taxReadyAt           DateTime?
+  taxReadyByUserId     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  taxProfile   ClientTaxProfile?
-  requirements ClientRequirement[]
-  requests     ClientRequest[]
-  portalAccess ClientPortalAccess?
-  invitations  ClientInvitation[]
-  documents    Document[]
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taxProfile           ClientTaxProfile?
+  requirements         ClientRequirement[]
+  requests             ClientRequest[]
+  portalAccess         ClientPortalAccess?
+  invitations          ClientInvitation[]
+  documents            Document[]
+  complianceExceptions ComplianceException[]
 
   @@index([organizationId])
   @@index([organizationId, type])
@@ -320,6 +405,11 @@ model ClientTaxProfile {
   hasLiabilities       Boolean @default(false)
   hasMultipleEmployers Boolean @default(false)
 
+  openingWealth     Decimal? @db.Decimal(18, 2)
+  wealthAdditions   Decimal? @db.Decimal(18, 2)
+  wealthReductions  Decimal? @db.Decimal(18, 2)
+  closingWealth     Decimal? @db.Decimal(18, 2)
+
   internalNotes String?
 
   createdAt DateTime @default(now())
@@ -333,11 +423,12 @@ model ClientTaxProfile {
   @@index([clientId])
   @@map("client_tax_profile")
 }
-
 model ClientIncomeSource {
   id           String           @id @default(cuid())
   taxProfileId String
   type         IncomeSourceType
+
+  declaredAmount Decimal? @db.Decimal(18, 2)
 
   taxProfile ClientTaxProfile @relation(fields: [taxProfileId], references: [id], onDelete: Cascade)
 
@@ -413,6 +504,7 @@ model ClientRequirement {
   requirementDefinition RequirementDefinition @relation(fields: [requirementDefinitionId], references: [id])
   requests              ClientRequest[]
   documents             Document[]
+  complianceExceptions  ComplianceException[]
 
   @@unique([clientId, requirementDefinitionId, taxYear])
   @@index([clientId])
@@ -556,6 +648,10 @@ model Document {
   clientRequest     ClientRequest?     @relation(fields: [clientRequestId], references: [id], onDelete: SetNull)
   clientRequirement ClientRequirement? @relation(fields: [clientRequirementId], references: [id], onDelete: SetNull)
 
+  complianceExceptions ComplianceException[]
+  validation           DocumentValidation?
+  extraction           DocumentExtraction?
+
   @@unique([clientId, sha256Hash])
   @@index([organizationId])
   @@index([clientId])
@@ -563,4 +659,154 @@ model Document {
   @@index([clientRequirementId])
   @@index([clientId, status])
   @@map("document")
+}
+
+model ComplianceException {
+  id                  String  @id @default(cuid())
+  organizationId      String
+  clientId            String
+  clientRequirementId String?
+  documentId          String?
+
+  title       String
+  description String
+  status      ExceptionStatus   @default(OPEN)
+  severity    ExceptionSeverity @default(WARNING)
+  source      ExceptionSource
+
+  resolutionNote   String?
+  createdByUserId  String?
+  resolvedByUserId String?
+  resolvedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientRequirement ClientRequirement? @relation(fields: [clientRequirementId], references: [id], onDelete: SetNull)
+  document          Document?          @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([clientRequirementId])
+  @@index([documentId])
+  @@index([organizationId, status])
+  @@index([clientId, status])
+  @@map("compliance_exception")
+}
+
+model DocumentValidation {
+  id         String @id @default(cuid())
+  documentId String @unique
+
+  status DocumentValidationStatus @default(PENDING)
+
+  fileTypeCheck    ValidationCheckStatus @default(NOT_CHECKED)
+  fileSizeCheck    ValidationCheckStatus @default(NOT_CHECKED)
+  requirementCheck ValidationCheckStatus @default(NOT_CHECKED)
+  taxYearCheck     ValidationCheckStatus @default(NOT_CHECKED)
+
+  expectedTaxYear Int?
+  detectedTaxYear Int?
+
+  summary     String?
+  validatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("document_validation")
+}
+
+model DocumentExtraction {
+  id         String                   @id @default(cuid())
+  documentId String                   @unique
+  status     DocumentExtractionStatus @default(PENDING)
+
+  extractorVersion String?
+  rawText          String?
+  errorMessage     String?
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  document Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  fields   ExtractedField[]
+
+  @@index([status])
+  @@map("document_extraction")
+}
+
+model ExtractedField {
+  id           String             @id @default(cuid())
+  extractionId String
+  key          String
+  label        String
+  type         ExtractedFieldType
+
+  textValue    String?
+  numericValue Decimal? @db.Decimal(18, 2)
+
+  sourceText String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  extraction DocumentExtraction @relation(fields: [extractionId], references: [id], onDelete: Cascade)
+
+  @@unique([extractionId, key])
+  @@index([extractionId])
+  @@map("extracted_field")
+}
+
+model Notification {
+  id String @id @default(cuid())
+
+  organizationId String
+  clientId       String?
+  userId         String?
+
+  audience NotificationAudience
+  type     NotificationType     @default(INFO)
+
+  title   String
+  message String
+  href    String?
+
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, audience])
+  @@index([clientId, audience])
+  @@index([userId])
+  @@index([readAt])
+  @@index([createdAt])
+  @@map("notification")
+}
+
+model AuditLog {
+  id             String      @id @default(cuid())
+  organizationId String
+  clientId       String?
+  userId         String?
+  action         AuditAction
+  description    String
+  entityType     String?
+  entityId       String?
+  createdAt      DateTime    @default(now())
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_log")
 }

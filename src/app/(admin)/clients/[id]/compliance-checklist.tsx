@@ -1,10 +1,4 @@
-import {
-  CheckCircle2,
-  Circle,
-  CircleAlert,
-  FileText,
-  Info,
-} from "lucide-react";
+import Link from "next/link";
 
 import { StatusBadge } from "@/components/taxready/status-badge";
 import type { StatusTone } from "@/components/taxready/status-badge";
@@ -20,7 +14,6 @@ type Requirement = {
   status: RequirementStatus;
   source: RequirementSource;
   required: boolean;
-
   requirementDefinition: {
     title: string;
     description: string | null;
@@ -30,6 +23,7 @@ type Requirement = {
 };
 
 type ComplianceChecklistProps = {
+  clientId: string;
   requirements: Requirement[];
 };
 
@@ -39,8 +33,7 @@ function formatLabel(value: string) {
     .split("_")
     .map(
       (word) =>
-        word.charAt(0).toUpperCase() +
-        word.slice(1),
+        word.charAt(0).toUpperCase() + word.slice(1),
     )
     .join(" ");
 }
@@ -68,183 +61,239 @@ function getStatusTone(
   }
 }
 
-function RequirementIcon({
-  status,
+function getResponseTypeLabel(
+  type: RequirementResponseType,
+) {
+  switch (type) {
+    case "DOCUMENT":
+      return "Document";
+
+    case "INFORMATION":
+      return "Information";
+
+    case "DOCUMENT_OR_INFORMATION":
+      return "Document or information";
+
+    default:
+      return formatLabel(type);
+  }
+}
+
+function RequestClientLink({
+  clientId,
+  requirementId,
 }: {
-  status: RequirementStatus;
+  clientId: string;
+  requirementId: string;
 }) {
-  if (status === "COMPLETED") {
-    return (
-      <CheckCircle2 className="size-[18px] text-success" />
-    );
-  }
-
-  if (
-    status === "NEEDS_REVIEW" ||
-    status === "NOT_AVAILABLE"
-  ) {
-    return (
-      <CircleAlert className="size-[18px] text-warning" />
-    );
-  }
-
-  if (
-    status === "SUBMITTED" ||
-    status === "REQUESTED"
-  ) {
-    return (
-      <FileText className="size-[18px] text-primary" />
-    );
-  }
-
   return (
-    <Circle className="size-[18px] text-muted-foreground" />
+    <Link
+      href={`/clients/${clientId}?requestRequirement=${encodeURIComponent(
+        requirementId,
+      )}#client-requests`}
+      className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+    >
+      Request client
+    </Link>
   );
 }
 
 export function ComplianceChecklist({
+  clientId,
   requirements,
 }: ComplianceChecklistProps) {
   if (requirements.length === 0) {
     return (
-      <div className="flex min-h-[220px] items-center justify-center px-5 py-8">
-        <div className="max-w-md text-center">
-          <div className="mx-auto flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-            <FileText className="size-[18px]" />
-          </div>
-
-          <p className="mt-3 text-sm font-medium">
+      <div className="flex min-h-52 items-center justify-center px-5 py-8 text-center">
+        <div className="max-w-md">
+          <p className="text-sm font-semibold">
             No compliance checklist yet
           </p>
 
-          <p className="mt-1 text-sm leading-5 text-muted-foreground">
-            Complete the client&apos;s tax
-            profile, then generate requirements
-            for this tax year.
+          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+            Complete the client&apos;s tax profile,
+            then generate requirements for this tax
+            year.
           </p>
         </div>
       </div>
     );
   }
 
-  const completedCount =
-    requirements.filter(
-      (requirement) =>
-        requirement.status === "COMPLETED",
-    ).length;
+  const completedCount = requirements.filter(
+    (requirement) =>
+      requirement.status === "COMPLETED" ||
+      requirement.status === "WAIVED",
+  ).length;
 
   return (
     <div>
-      <div className="flex flex-col gap-2 border-b bg-muted/25 px-4 py-3 tablet:flex-row tablet:items-center tablet:justify-between tablet:px-5">
-        <p className="text-xs font-medium text-muted-foreground">
-          {requirements.length}{" "}
-          {requirements.length === 1
-            ? "requirement"
-            : "requirements"}
-        </p>
+      {/* Checklist summary */}
+      <div className="flex flex-col gap-3 border-b bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex items-center gap-3">
+          <p className="text-sm font-medium">
+            {completedCount} of {requirements.length} complete
+          </p>
 
-        <p className="text-xs text-muted-foreground">
-          {completedCount} completed
-        </p>
+          <span className="text-xs text-muted-foreground">
+            {requirements.length} requirements
+          </span>
+        </div>
+
+        <div className="h-1.5 w-full max-w-44 overflow-hidden rounded-full bg-muted sm:w-36">
+          <div
+            className="h-full rounded-full bg-emerald-600"
+            style={{
+              width: `${Math.round(
+                (completedCount / requirements.length) * 100,
+              )}%`,
+            }}
+          />
+        </div>
       </div>
 
-      <div className="divide-y">
-        {requirements.map(
-          (requirement) => {
+      {/* Desktop / tablet */}
+      <div className="hidden sm:block">
+        <div className="grid grid-cols-[minmax(0,1fr)_150px_120px_150px] gap-4 border-b bg-muted/10 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          <span>Requirement</span>
+          <span>Response</span>
+          <span className="text-right">Status</span>
+          <span className="text-right">Action</span>
+        </div>
+
+        <div className="divide-y">
+          {requirements.map((requirement) => {
             const definition =
               requirement.requirementDefinition;
 
             return (
               <div
                 key={requirement.id}
-                className="px-4 py-4 transition-colors duration-150 hover:bg-muted/25 tablet:px-5"
+                className="grid grid-cols-[minmax(0,1fr)_150px_120px_150px] items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/20"
               >
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/70">
-                    <RequirementIcon
-                      status={
-                        requirement.status
-                      }
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">
+                    {definition.title}
+                  </p>
+
+                  {definition.description ? (
+                    <p className="mt-1 line-clamp-2 max-w-3xl text-xs leading-5 text-muted-foreground">
+                      {definition.description}
+                    </p>
+                  ) : null}
+
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {formatLabel(definition.category)}
+                    {" · "}
+                    {requirement.required
+                      ? "Required"
+                      : "Optional"}
+                    {" · "}
+                    {requirement.source === "PROFILE_RULE"
+                      ? "Profile generated"
+                      : "Manual"}
+                  </p>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  {getResponseTypeLabel(
+                    definition.responseType,
+                  )}
+                </p>
+
+                <div className="flex justify-end">
+                  <StatusBadge
+                    tone={getStatusTone(
+                      requirement.status,
+                    )}
+                  >
+                    {formatLabel(requirement.status)}
+                  </StatusBadge>
+                </div>
+
+                <div className="flex justify-end">
+                  {requirement.status === "PENDING" ? (
+                    <RequestClientLink
+                      clientId={clientId}
+                      requirementId={requirement.id}
                     />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-2 min-[560px]:flex-row min-[560px]:items-start min-[560px]:justify-between">
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-medium text-foreground">
-                          {definition.title}
-                        </h3>
-
-                        {definition.description ? (
-                          <p className="mt-1 max-w-3xl text-sm leading-5 text-muted-foreground">
-                            {
-                              definition.description
-                            }
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <StatusBadge
-                        tone={getStatusTone(
-                          requirement.status,
-                        )}
-                        className="w-fit shrink-0"
-                      >
-                        {formatLabel(
-                          requirement.status,
-                        )}
-                      </StatusBadge>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                      <span>
-                        {formatLabel(
-                          definition.category,
-                        )}
-                      </span>
-
-                      <span
-                        aria-hidden="true"
-                        className="size-1 rounded-full bg-border"
-                      />
-
-                      <span>
-                        {formatLabel(
-                          definition.responseType,
-                        )}
-                      </span>
-
-                      <span
-                        aria-hidden="true"
-                        className="size-1 rounded-full bg-border"
-                      />
-
-                      <span>
-                        {requirement.required
-                          ? "Required"
-                          : "Optional"}
-                      </span>
-
-                      <span
-                        aria-hidden="true"
-                        className="size-1 rounded-full bg-border"
-                      />
-
-                      <span className="inline-flex items-center gap-1">
-                        <Info className="size-3" />
-
-                        {requirement.source ===
-                        "PROFILE_RULE"
-                          ? "Profile generated"
-                          : "Manual"}
-                      </span>
-                    </div>
-                  </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      —
+                    </span>
+                  )}
                 </div>
               </div>
             );
-          },
-        )}
+          })}
+        </div>
+      </div>
+
+      {/* Mobile */}
+      <div className="divide-y sm:hidden">
+        {requirements.map((requirement) => {
+          const definition =
+            requirement.requirementDefinition;
+
+          return (
+            <div
+              key={requirement.id}
+              className="px-4 py-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="min-w-0 text-sm font-semibold">
+                  {definition.title}
+                </p>
+
+                <StatusBadge
+                  tone={getStatusTone(
+                    requirement.status,
+                  )}
+                  className="shrink-0"
+                >
+                  {formatLabel(requirement.status)}
+                </StatusBadge>
+              </div>
+
+              {definition.description ? (
+                <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                  {definition.description}
+                </p>
+              ) : null}
+
+              <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span>
+                  {getResponseTypeLabel(
+                    definition.responseType,
+                  )}
+                </span>
+
+                <span aria-hidden="true">·</span>
+
+                <span>
+                  {formatLabel(definition.category)}
+                </span>
+
+                <span aria-hidden="true">·</span>
+
+                <span>
+                  {requirement.required
+                    ? "Required"
+                    : "Optional"}
+                </span>
+              </div>
+
+              {requirement.status === "PENDING" ? (
+                <div className="mt-3">
+                  <RequestClientLink
+                    clientId={clientId}
+                    requirementId={requirement.id}
+                  />
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -2,9 +2,12 @@
 
 import { headers } from "next/headers";
 
+import { AuditAction } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { clientSchema } from "@/lib/validations/client";
+import { createAuditLog } from "@/services/audit-log.service";
 import { createClientForUser } from "@/services/client.service";
+import { getOrganizationForUser } from "@/services/organization.service";
 
 export type ClientActionInput = {
   type: "INDIVIDUAL" | "BUSINESS";
@@ -35,7 +38,7 @@ export type ClientActionInput = {
 };
 
 export async function createClientAction(
-  input: ClientActionInput
+  input: ClientActionInput,
 ) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -62,56 +65,78 @@ export async function createClientAction(
   try {
     const client = await createClientForUser(
       session.user.id,
-      result.data
+      result.data,
     );
+
+    const organization = await getOrganizationForUser(
+      session.user.id,
+    );
+
+    if (organization) {
+      const clientName =
+        result.data.type === "BUSINESS"
+          ? result.data.businessName
+          : `${result.data.firstName} ${result.data.lastName}`.trim();
+
+      await createAuditLog({
+        organizationId: organization.id,
+        clientId: client.id,
+        userId: session.user.id,
+        action: AuditAction.CLIENT_CREATED,
+        description: `Client created: ${
+          clientName || "Client"
+        }`,
+        entityType: "CLIENT",
+        entityId: client.id,
+      });
+    }
 
     return {
       success: true,
       message: "Client created successfully.",
       clientId: client.id,
     };
- } catch (error) {
-  console.error("Failed to create client:", error);
+  } catch (error) {
+    console.error("Failed to create client:", error);
 
-  if (
-    error instanceof Error &&
-    error.message === "CLIENT_EMAIL_EXISTS"
-  ) {
+    if (
+      error instanceof Error &&
+      error.message === "CLIENT_EMAIL_EXISTS"
+    ) {
+      return {
+        success: false,
+        message:
+          "A client with this email already exists in your practice.",
+      };
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "ORGANIZATION_NOT_FOUND"
+    ) {
+      return {
+        success: false,
+        message:
+          "Your practice setup could not be found.",
+      };
+    }
+
+    if (
+      error instanceof Error &&
+      error.message ===
+        "INVALID_PREPARATION_DEADLINE"
+    ) {
+      return {
+        success: false,
+        message:
+          "Enter a valid preparation deadline.",
+      };
+    }
+
     return {
       success: false,
       message:
-        "A client with this email already exists in your practice.",
+        "Unable to create client. Please try again.",
     };
   }
-
-  if (
-    error instanceof Error &&
-    error.message ===
-      "ORGANIZATION_NOT_FOUND"
-  ) {
-    return {
-      success: false,
-      message:
-        "Your practice setup could not be found.",
-    };
-  }
-
-  if (
-    error instanceof Error &&
-    error.message ===
-      "INVALID_PREPARATION_DEADLINE"
-  ) {
-    return {
-      success: false,
-      message:
-        "Enter a valid preparation deadline.",
-    };
-  }
-
-  return {
-    success: false,
-    message:
-      "Unable to create client. Please try again.",
-  };
-}
 }

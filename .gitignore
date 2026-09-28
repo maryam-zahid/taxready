@@ -41,3 +41,13 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+.vercel
+.env*
+
+# Local development / AI tool settings
+.agents/
+.claude/
+.vscode/
+.windsurf/
+skills-lock.json

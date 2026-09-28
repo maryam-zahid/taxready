@@ -2,34 +2,41 @@ import type { ReactNode } from "react";
 
 import { AdminHeader } from "@/components/taxready/admin-header";
 import { AdminSidebar } from "@/components/taxready/admin-sidebar";
+import { AppFooter } from "@/components/taxready/app-footer";
+import type { TaxReadyNotification } from "@/services/notification.service";
 
 type AdminShellProps = {
   children: ReactNode;
   userName?: string;
   userEmail?: string;
+  notifications?: TaxReadyNotification[];
 };
 
 export function AdminShell({
   children,
   userName,
   userEmail,
+  notifications = [],
 }: AdminShellProps) {
   return (
-    <div className="min-h-dvh bg-background">
-      <div className="fixed inset-y-0 left-0 z-40 hidden w-[240px] border-r border-sidebar-border bg-sidebar desktop:flex">
-        <AdminSidebar />
-      </div>
+    <div className="flex min-h-dvh flex-col bg-background">
+      <AdminHeader
+        userName={userName}
+        userEmail={userEmail}
+        notifications={notifications}
+      />
 
-      <div className="min-h-dvh desktop:pl-[240px]">
-        <AdminHeader
-          userName={userName}
-          userEmail={userEmail}
-        />
+      <div className="flex flex-1 items-stretch">
+        <aside className="hidden w-[276px] shrink-0 border-r border-border bg-background desktop:block">
+          <AdminSidebar />
+        </aside>
 
-        <main className="min-w-0">
+        <main className="min-w-0 flex-1">
           {children}
         </main>
       </div>
+
+      <AppFooter />
     </div>
   );
 }

@@ -113,9 +113,10 @@
 
   --destructive: #c63f3f;
 
-  --border: #e4e8ed;
- --border: #dfe4ea;
-  --ring: #2f80ed;
+  --border: #dfe4ea;
+--input: #dfe4ea;
+--ring: #2f80ed;
+ 
 
   /*
    * Semantic states.
@@ -283,9 +284,8 @@
    */
 
   .app-page {
-    @apply mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8;
-  }
-
+  @apply mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-7;
+}
   /*
    * Shared page heading.
    */
@@ -311,13 +311,13 @@
    * Only use this when the entire card is clickable.
    */
 
-  .taxready-card-interactive {
-    @apply transition-[transform,box-shadow,border-color] duration-200 ease-out;
-  }
+ .taxready-card-interactive {
+  @apply transition-[border-color,box-shadow,background-color] duration-150;
+}
 
-  .taxready-card-interactive:hover {
-    @apply -translate-y-0.5 border-[#d3d9e0] shadow-[0_8px_24px_rgba(15,23,42,0.07)];
-  }
+.taxready-card-interactive:hover {
+  @apply border-[#cfd6de] shadow-[0_2px_8px_rgba(15,23,42,0.05)];
+}
 
   /*
    * Consistent focus ring for custom interactive controls.

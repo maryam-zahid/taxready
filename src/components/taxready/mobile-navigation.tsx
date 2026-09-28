@@ -22,17 +22,17 @@ export function MobileNavigation() {
           <Button
             variant="ghost"
             size="icon"
-className="desktop:hidden"
+            className="size-9 rounded-lg text-white hover:bg-white/10 hover:text-white focus-visible:ring-white/40 desktop:hidden"
             aria-label="Open navigation"
           />
         }
       >
-        <Menu className="size-5" />
+        <Menu className="size-5" strokeWidth={2} />
       </SheetTrigger>
 
       <SheetContent
         side="left"
-        className="w-[280px] max-w-[86vw] gap-0 p-0"
+        className="w-[280px] max-w-[86vw] gap-0 border-r p-0"
       >
         <SheetTitle className="sr-only">
           TaxReady navigation

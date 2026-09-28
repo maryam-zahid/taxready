@@ -6,7 +6,7 @@ import { AdminShell } from "@/components/taxready/admin-shell";
 import { auth } from "@/lib/auth";
 import { getAdminProfile } from "@/services/auth-profile.service";
 import { getOrganizationForUser } from "@/services/organization.service";
-
+import { getAdminNotifications } from "@/services/notification.service";
 type AdminLayoutProps = {
   children: ReactNode;
 };
@@ -38,12 +38,14 @@ export default async function AdminLayout({
   const userName =
     `${profile.firstName} ${profile.lastName ?? ""}`.trim();
 
+    const notifications = await getAdminNotifications(organization.id);
   return (
-    <AdminShell
-      userName={userName}
-      userEmail={session.user.email}
-    >
-      {children}
-    </AdminShell>
+   <AdminShell
+  userName={userName}
+  userEmail={session.user.email}
+  notifications={notifications}
+>
+  {children}
+</AdminShell>
   );
 }

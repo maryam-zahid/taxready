@@ -31,7 +31,7 @@ export function PageHeader({
           </p>
         ) : null}
 
-        <h1 className="text-[26px] font-semibold leading-[1.2] tracking-[-0.025em] text-foreground tablet:text-[30px]">
+        <h1 className="text-[27px] font-semibold leading-[1.2] tracking-[-0.03em] text-foreground tablet:text-[30px]">
           {title}
         </h1>
 

@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import {
   organizationSchema,
   type OrganizationInput,
 } from "@/lib/validations/organization";
+
 import { saveOrganizationAction } from "./actions";
 
 type FirmFormProps = {
@@ -26,10 +27,7 @@ export function FirmForm({
     register,
     handleSubmit,
     watch,
-    formState: {
-      errors,
-      isSubmitting,
-    },
+    formState: { errors, isSubmitting },
   } = useForm<OrganizationInput>({
     resolver: zodResolver(organizationSchema),
     defaultValues: initialValues,
@@ -44,12 +42,11 @@ export function FirmForm({
     practiceType === "TAX_ACCOUNTING_FIRM";
 
   const onSubmit = async (
-    data: OrganizationInput
+    data: OrganizationInput,
   ) => {
     setServerError("");
 
-    const result =
-      await saveOrganizationAction(data);
+    const result = await saveOrganizationAction(data);
 
     if (!result.success) {
       setServerError(result.message);
@@ -60,23 +57,38 @@ export function FirmForm({
     router.refresh();
   };
 
+  const inputClassName =
+    "h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15";
+
+  const textareaClassName =
+    "min-h-24 w-full min-w-0 resize-y rounded-lg border border-input bg-background px-3.5 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15";
+
+  const labelClassName =
+    "mb-2 block text-sm font-medium text-foreground";
+
+  const errorClassName =
+    "mt-1.5 text-xs text-destructive";
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="space-y-5"
+      noValidate
+      className="mt-6 space-y-5"
     >
       <div>
         <label
           htmlFor="practiceType"
-          className="mb-1 block text-sm font-medium"
+          className={labelClassName}
         >
-          How do you work? *
+          How do you work?{" "}
+          <span className="text-destructive">*</span>
         </label>
 
         <select
           id="practiceType"
           {...register("practiceType")}
-          className="w-full rounded-md border px-3 py-2"
+          aria-invalid={Boolean(errors.practiceType)}
+          className={inputClassName}
         >
           <option value="INDEPENDENT_TAX_PROFESSIONAL">
             Independent Tax Professional
@@ -91,23 +103,26 @@ export function FirmForm({
           </option>
         </select>
 
-        {errors.practiceType && (
-          <p className="mt-1 text-sm text-red-600">
+        {errors.practiceType ? (
+          <p role="alert" className={errorClassName}>
             {errors.practiceType.message}
           </p>
-        )}
+        ) : null}
       </div>
 
       <div>
         <label
           htmlFor="name"
-          className="mb-1 block text-sm font-medium"
+          className={labelClassName}
         >
           {isFirm
-            ? "Firm Name *"
+            ? "Firm name"
             : isIndependent
-              ? "Practice / Business Name"
-              : "Practice / Workspace Name *"}
+              ? "Practice / business name"
+              : "Practice / workspace name"}{" "}
+          {!isIndependent ? (
+            <span className="text-destructive">*</span>
+          ) : null}
         </label>
 
         <input
@@ -121,112 +136,140 @@ export function FirmForm({
                 ? "Optional"
                 : "Enter workspace name"
           }
-          className="w-full rounded-md border px-3 py-2"
+          aria-invalid={Boolean(errors.name)}
+          className={inputClassName}
         />
 
-        {isIndependent && (
-          <p className="mt-1 text-xs text-gray-500">
+        {isIndependent ? (
+          <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
             Optional. If left blank, your name will
             be used for your workspace.
           </p>
-        )}
+        ) : null}
 
-        {errors.name && (
-          <p className="mt-1 text-sm text-red-600">
+        {errors.name ? (
+          <p role="alert" className={errorClassName}>
             {errors.name.message}
           </p>
-        )}
+        ) : null}
       </div>
 
-      <div>
-        <label
-          htmlFor="businessEmail"
-          className="mb-1 block text-sm font-medium"
-        >
-          Business Email {isFirm ? "*" : ""}
-        </label>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="min-w-0">
+          <label
+            htmlFor="businessEmail"
+            className={labelClassName}
+          >
+            Business email{" "}
+            {isFirm ? (
+              <span className="text-destructive">*</span>
+            ) : null}
+          </label>
 
-        <input
-          id="businessEmail"
-          type="email"
-          {...register("businessEmail")}
-          placeholder="info@example.com"
-          className="w-full rounded-md border px-3 py-2"
-        />
+          <input
+            id="businessEmail"
+            type="email"
+            autoComplete="email"
+            {...register("businessEmail")}
+            placeholder="info@example.com"
+            aria-invalid={Boolean(errors.businessEmail)}
+            className={inputClassName}
+          />
 
-        {errors.businessEmail && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.businessEmail.message}
-          </p>
-        )}
+          {errors.businessEmail ? (
+            <p role="alert" className={errorClassName}>
+              {errors.businessEmail.message}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="min-w-0">
+          <label
+            htmlFor="businessPhone"
+            className={labelClassName}
+          >
+            Business phone{" "}
+            {isFirm ? (
+              <span className="text-destructive">*</span>
+            ) : null}
+          </label>
+
+          <input
+            id="businessPhone"
+            type="tel"
+            autoComplete="tel"
+            {...register("businessPhone")}
+            placeholder="+92 300 1234567"
+            aria-invalid={Boolean(errors.businessPhone)}
+            className={inputClassName}
+          />
+
+          {errors.businessPhone ? (
+            <p role="alert" className={errorClassName}>
+              {errors.businessPhone.message}
+            </p>
+          ) : null}
+        </div>
       </div>
 
-      <div>
-        <label
-          htmlFor="businessPhone"
-          className="mb-1 block text-sm font-medium"
-        >
-          Business Phone {isFirm ? "*" : ""}
-        </label>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="min-w-0">
+          <label
+            htmlFor="ntn"
+            className={labelClassName}
+          >
+            NTN{" "}
+            <span className="font-normal text-muted-foreground">
+              (Optional)
+            </span>
+          </label>
 
-        <input
-          id="businessPhone"
-          type="tel"
-          {...register("businessPhone")}
-          placeholder="+92 300 1234567"
-          className="w-full rounded-md border px-3 py-2"
-        />
+          <input
+            id="ntn"
+            type="text"
+            {...register("ntn")}
+            placeholder="Enter NTN"
+            aria-invalid={Boolean(errors.ntn)}
+            className={inputClassName}
+          />
 
-        {errors.businessPhone && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.businessPhone.message}
-          </p>
-        )}
-      </div>
+          {errors.ntn ? (
+            <p role="alert" className={errorClassName}>
+              {errors.ntn.message}
+            </p>
+          ) : null}
+        </div>
 
-      <div>
-        <label
-          htmlFor="ntn"
-          className="mb-1 block text-sm font-medium"
-        >
-          NTN
-        </label>
+        <div className="min-w-0">
+          <label
+            htmlFor="country"
+            className={labelClassName}
+          >
+            Country{" "}
+            <span className="text-destructive">*</span>
+          </label>
 
-        <input
-          id="ntn"
-          type="text"
-          {...register("ntn")}
-          placeholder="Optional"
-          className="w-full rounded-md border px-3 py-2"
-        />
-      </div>
+          <input
+            id="country"
+            type="text"
+            autoComplete="country-name"
+            {...register("country")}
+            aria-invalid={Boolean(errors.country)}
+            className={inputClassName}
+          />
 
-      <div>
-        <label
-          htmlFor="country"
-          className="mb-1 block text-sm font-medium"
-        >
-          Country *
-        </label>
-
-        <input
-          id="country"
-          type="text"
-          {...register("country")}
-          className="w-full rounded-md border px-3 py-2"
-        />
-
-        {errors.country && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.country.message}
-          </p>
-        )}
+          {errors.country ? (
+            <p role="alert" className={errorClassName}>
+              {errors.country.message}
+            </p>
+          ) : null}
+        </div>
       </div>
 
       <div>
         <label
           htmlFor="city"
-          className="mb-1 block text-sm font-medium"
+          className={labelClassName}
         >
           City
         </label>
@@ -234,66 +277,90 @@ export function FirmForm({
         <input
           id="city"
           type="text"
+          autoComplete="address-level2"
           {...register("city")}
           placeholder="Lahore"
-          className="w-full rounded-md border px-3 py-2"
+          aria-invalid={Boolean(errors.city)}
+          className={inputClassName}
         />
+
+        {errors.city ? (
+          <p role="alert" className={errorClassName}>
+            {errors.city.message}
+          </p>
+        ) : null}
       </div>
 
       <div>
         <label
           htmlFor="address"
-          className="mb-1 block text-sm font-medium"
+          className={labelClassName}
         >
-          {isFirm
-            ? "Business Address"
-            : "Address"}
+          {isFirm ? "Business address" : "Address"}
         </label>
 
         <textarea
           id="address"
           {...register("address")}
           rows={3}
-          className="w-full rounded-md border px-3 py-2"
+          autoComplete="street-address"
+          placeholder="Enter your business address"
+          aria-invalid={Boolean(errors.address)}
+          className={textareaClassName}
         />
+
+        {errors.address ? (
+          <p role="alert" className={errorClassName}>
+            {errors.address.message}
+          </p>
+        ) : null}
       </div>
 
       <div>
         <label
           htmlFor="website"
-          className="mb-1 block text-sm font-medium"
+          className={labelClassName}
         >
-          Website
+          Website{" "}
+          <span className="font-normal text-muted-foreground">
+            (Optional)
+          </span>
         </label>
 
         <input
           id="website"
           type="url"
+          autoComplete="url"
           {...register("website")}
           placeholder="https://example.com"
-          className="w-full rounded-md border px-3 py-2"
+          aria-invalid={Boolean(errors.website)}
+          className={inputClassName}
         />
 
-        {errors.website && (
-          <p className="mt-1 text-sm text-red-600">
+        {errors.website ? (
+          <p role="alert" className={errorClassName}>
             {errors.website.message}
           </p>
-        )}
+        ) : null}
       </div>
 
-      {serverError && (
-        <p className="text-sm text-red-600">
+      {serverError ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/20 bg-destructive/5 px-3.5 py-3 text-sm leading-5 text-destructive"
+        >
           {serverError}
-        </p>
-      )}
+        </div>
+      ) : null}
 
-      <div className="flex gap-3">
+      <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={() =>
             router.push("/onboarding/profile")
           }
-          className="rounded-md border px-4 py-2"
+          disabled={isSubmitting}
+          className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-input bg-background px-5 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           Back
         </button>
@@ -301,11 +368,9 @@ export function FirmForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
+          className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
-          {isSubmitting
-            ? "Saving..."
-            : "Continue"}
+          {isSubmitting ? "Saving..." : "Continue"}
         </button>
       </div>
     </form>

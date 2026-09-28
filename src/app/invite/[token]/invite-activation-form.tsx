@@ -1,7 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 
@@ -21,6 +23,12 @@ export function InviteActivationForm({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] =
     useState("");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
+
   const [error, setError] = useState<string | null>(
     null,
   );
@@ -111,102 +119,141 @@ export function InviteActivationForm({
   return (
     <form
       onSubmit={handleSubmit}
-      style={{
-        display: "grid",
-        gap: 16,
-      }}
+      noValidate
+className="mt-5 space-y-4"
     >
-      <label>
-        <div
-          style={{
-            marginBottom: 6,
-            fontWeight: 500,
-          }}
+      <div>
+        <label
+          htmlFor="activation-password"
+          className="mb-2 block text-sm font-medium text-foreground"
         >
-          Email
+          Password
+        </label>
+
+        <div className="relative">
+          <input
+            id="activation-password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+
+              if (error) {
+                setError(null);
+              }
+            }}
+            required
+            disabled={isSubmitting}
+            placeholder="Enter your password"
+            className="h-11 w-full rounded-lg border border-input bg-background px-3.5 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+
+          <button
+            type="button"
+            onClick={() =>
+              setShowPassword((current) => !current)
+            }
+            disabled={isSubmitting}
+            aria-label={
+              showPassword
+                ? "Hide password"
+                : "Show password"
+            }
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 disabled:cursor-not-allowed"
+          >
+            {showPassword ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </button>
         </div>
+      </div>
 
-        <input
-          value={email}
-          readOnly
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: 10,
-          }}
-        />
-      </label>
-
-      <label>
-        <div
-          style={{
-            marginBottom: 6,
-            fontWeight: 500,
-          }}
-        >
-          Create password
-        </div>
-
-        <input
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(event) =>
-            setPassword(event.target.value)
-          }
-          required
-          minLength={8}
-          disabled={isSubmitting}
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: 10,
-          }}
-        />
-      </label>
-
-      <label>
-        <div
-          style={{
-            marginBottom: 6,
-            fontWeight: 500,
-          }}
+      <div>
+        <label
+          htmlFor="activation-confirm-password"
+          className="mb-2 block text-sm font-medium text-foreground"
         >
           Confirm password
+        </label>
+
+        <div className="relative">
+          <input
+            id="activation-confirm-password"
+            type={
+              showConfirmPassword
+                ? "text"
+                : "password"
+            }
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(event) => {
+              setConfirmPassword(
+                event.target.value,
+              );
+
+              if (error) {
+                setError(null);
+              }
+            }}
+            required
+            disabled={isSubmitting}
+            placeholder="Confirm your password"
+            className="h-11 w-full rounded-lg border border-input bg-background px-3.5 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+
+          <button
+            type="button"
+            onClick={() =>
+              setShowConfirmPassword(
+                (current) => !current,
+              )
+            }
+            disabled={isSubmitting}
+            aria-label={
+              showConfirmPassword
+                ? "Hide password"
+                : "Show password"
+            }
+            aria-pressed={showConfirmPassword}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 disabled:cursor-not-allowed"
+          >
+            {showConfirmPassword ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </button>
         </div>
+      </div>
 
-        <input
-          type="password"
-          autoComplete="new-password"
-          value={confirmPassword}
-          onChange={(event) =>
-            setConfirmPassword(event.target.value)
-          }
-          required
-          minLength={8}
-          disabled={isSubmitting}
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: 10,
-          }}
-        />
-      </label>
-
-      {error && (
-        <p role="alert" style={{ margin: 0 }}>
+      {error ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 text-sm leading-5 text-red-700"
+        >
           {error}
-        </p>
-      )}
+        </div>
+      ) : null}
 
       <button
         type="submit"
         disabled={isSubmitting}
+className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting
-          ? "Activating..."
+          ? "Activating your account..."
           : "Activate My Account"}
       </button>
+
+      <p className="text-xs leading-5 text-muted-foreground">
+        By activating your account, you agree to
+        TaxReady&apos;s Terms of Service and Privacy
+        Policy.
+      </p>
     </form>
   );
 }

@@ -10,6 +10,56 @@ type InvitePageProps = {
   }>;
 };
 
+function TaxReadyHeader() {
+  return (
+    <header className="border-b border-border bg-background">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link
+          href="/login"
+          className="inline-flex min-w-0 items-center gap-2.5"
+          aria-label="TaxReady home"
+        >
+<span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-base font-bold text-primary-foreground">            T
+          </span>
+
+          <span className="truncate text-lg font-semibold tracking-tight text-foreground">
+            TaxReady
+          </span>
+        </Link>
+
+        <div className="text-right text-xs text-muted-foreground sm:text-sm">
+          <span className="hidden sm:inline">Need help? </span>
+          <a
+            href="mailto:support@taxready.example"
+            className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          >
+            Contact support
+          </a>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function PageShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-screen flex-col bg-muted/20">
+      <TaxReadyHeader />
+
+<main className="flex w-full flex-1 items-center justify-center px-4 py-5 sm:px-6 sm:py-7">        {children}
+      </main>
+
+      <footer className="px-4 pb-6 text-center text-xs text-muted-foreground">
+        © {new Date().getFullYear()} TaxReady. All rights reserved.
+      </footer>
+    </div>
+  );
+}
+
 export default async function InvitePage({
   params,
 }: InvitePageProps) {
@@ -20,76 +70,32 @@ export default async function InvitePage({
       await getClientInvitationByToken(token);
 
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          padding: 24,
-          background: "#f9fafb",
-        }}
-      >
-        <section
-          style={{
-            width: "100%",
-            maxWidth: 480,
-            padding: 32,
-            border: "1px solid #e5e7eb",
-            borderRadius: 16,
-            background: "#ffffff",
-          }}
-        >
-          <p
-            style={{
-              marginTop: 0,
-              marginBottom: 8,
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            TaxReady
-          </p>
+      <PageShell>
+<section className="w-full max-w-[480px] rounded-xl border border-border bg-background px-5 py-6 shadow-sm sm:px-7 sm:py-7">      
+<div className="border-b border-border pb-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-600">
+              Client portal
+            </p>
 
-          <h1
-            style={{
-              marginTop: 0,
-              marginBottom: 12,
-            }}
-          >
-            Activate your secure portal
-          </h1>
+<h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+              Activate your account
+            </h1>
 
-          <p
-            style={{
-              color: "#6b7280",
-              lineHeight: 1.6,
-            }}
-          >
-            {invitation.practiceName} has invited you
-            to TaxReady to securely provide the
-            information and documents needed for your
-            tax preparation.
-          </p>
+<p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Set your password to securely access your
+              TaxReady client portal and manage your tax
+              information.
+            </p>
+          </div>
 
-          <div
-            style={{
-              marginTop: 24,
-              marginBottom: 24,
-              padding: 16,
-              borderRadius: 10,
-              background: "#f9fafb",
-            }}
-          >
-            <strong>{invitation.clientName}</strong>
+<div className="mt-4 rounded-lg border border-primary/10 bg-primary/5 px-4 py-3">
+            <p className="text-xs font-medium text-muted-foreground">
+              Email address
+            </p>
 
-            <div
-              style={{
-                marginTop: 4,
-                color: "#6b7280",
-              }}
-            >
+            <p className="mt-1 break-all text-sm font-medium text-foreground">
               {invitation.email}
-            </div>
+            </p>
           </div>
 
           <InviteActivationForm
@@ -98,57 +104,33 @@ export default async function InvitePage({
             clientName={invitation.clientName}
           />
         </section>
-      </main>
+      </PageShell>
     );
   } catch {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          padding: 24,
-          background: "#f9fafb",
-        }}
-      >
-        <section
-          style={{
-            width: "100%",
-            maxWidth: 480,
-            padding: 32,
-            border: "1px solid #e5e7eb",
-            borderRadius: 16,
-            background: "#ffffff",
-          }}
-        >
-          <p
-            style={{
-              marginTop: 0,
-              marginBottom: 8,
-              fontWeight: 600,
-            }}
-          >
-            TaxReady
+      <PageShell>
+<section className="w-full max-w-[480px] rounded-xl border border-border bg-background px-5 py-6 shadow-sm sm:px-7 sm:py-7">          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-600">
+            Client portal
           </p>
 
-          <h1>Invitation unavailable</h1>
+<h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                Invitation unavailable
+          </h1>
 
-          <p
-            style={{
-              color: "#6b7280",
-              lineHeight: 1.6,
-            }}
-          >
-            This invitation is invalid, expired, or
-            has already been used. Please contact your
-            tax professional for a new invitation.
+<p className="mt-2 text-sm leading-6 text-muted-foreground">
+            This invitation is invalid, expired, or has
+            already been used. Please contact your tax
+            professional for a new invitation.
           </p>
 
-          <Link href="/login">
+          <Link
+            href="/login"
+            className="mt-6 inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          >
             Go to login
           </Link>
         </section>
-      </main>
+      </PageShell>
     );
   }
 }

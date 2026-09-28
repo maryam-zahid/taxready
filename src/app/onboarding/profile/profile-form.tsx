@@ -46,65 +46,79 @@ export function ProfileForm({
     router.push("/onboarding/firm");
   };
 
+  const inputClassName =
+    "h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15";
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="mt-8 space-y-6"
+      noValidate
+      className="mt-6 space-y-4"
     >
-      <div className="grid gap-5 sm:grid-cols-2">
-       
-     
- <div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="min-w-0">
           <label
             htmlFor="firstName"
-            className="mb-2 block text-sm font-medium text-black"
+            className="mb-2 block text-sm font-medium text-foreground"
           >
-            First Name
+            First name
           </label>
 
           <input
             id="firstName"
+            type="text"
+            autoComplete="given-name"
             {...register("firstName")}
-            placeholder="Maryam"
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-black outline-none focus:border-black"
+            placeholder="Enter your first name"
+            aria-invalid={Boolean(errors.firstName)}
+            className={inputClassName}
           />
 
-          {errors.firstName && (
-            <p className="mt-1 text-sm text-red-600">
+          {errors.firstName ? (
+            <p
+              role="alert"
+              className="mt-1.5 text-xs text-destructive"
+            >
               {errors.firstName.message}
             </p>
-          )}
+          ) : null}
         </div>
 
-        <div>
+        <div className="min-w-0">
           <label
             htmlFor="lastName"
-            className="mb-2 block text-sm font-medium text-black"
+            className="mb-2 block text-sm font-medium text-foreground"
           >
-            Last Name
+            Last name
           </label>
 
           <input
             id="lastName"
+            type="text"
+            autoComplete="family-name"
             {...register("lastName")}
-            placeholder="Zahid"
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-black outline-none focus:border-black"
+            placeholder="Enter your last name"
+            aria-invalid={Boolean(errors.lastName)}
+            className={inputClassName}
           />
 
-          {errors.lastName && (
-            <p className="mt-1 text-sm text-red-600">
+          {errors.lastName ? (
+            <p
+              role="alert"
+              className="mt-1.5 text-xs text-destructive"
+            >
               {errors.lastName.message}
             </p>
-          )}
+          ) : null}
         </div>
       </div>
 
       <div>
         <label
           htmlFor="email"
-          className="mb-2 block text-sm font-medium text-black"
+          className="mb-2 block text-sm font-medium text-foreground"
         >
-          Work Email
+          Work email
         </label>
 
         <input
@@ -112,21 +126,27 @@ export function ProfileForm({
           type="email"
           value={email}
           readOnly
-          className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-gray-600"
+          autoComplete="email"
+          aria-describedby="email-help"
+          className="h-11 w-full cursor-not-allowed rounded-lg border border-primary/15 bg-primary/5 px-3.5 text-sm text-foreground outline-none"
         />
 
-        <p className="mt-1 text-xs text-gray-500">
-          This email is linked to your TaxReady account.
+        <p
+          id="email-help"
+          className="mt-1.5 text-xs text-muted-foreground"
+        >
+          This email is linked to your TaxReady account
+          and cannot be changed here.
         </p>
       </div>
 
       <div>
         <label
           htmlFor="phone"
-          className="mb-2 block text-sm font-medium text-black"
+          className="mb-2 block text-sm font-medium text-foreground"
         >
-          Phone Number
-          <span className="ml-1 font-normal text-gray-500">
+          Phone number
+          <span className="ml-1 font-normal text-muted-foreground">
             (Optional)
           </span>
         </label>
@@ -134,30 +154,38 @@ export function ProfileForm({
         <input
           id="phone"
           type="tel"
+          autoComplete="tel"
           {...register("phone")}
           placeholder="+92 300 1234567"
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 text-black outline-none focus:border-black"
+          aria-invalid={Boolean(errors.phone)}
+          className={inputClassName}
         />
 
-        {errors.phone && (
-          <p className="mt-1 text-sm text-red-600">
+        {errors.phone ? (
+          <p
+            role="alert"
+            className="mt-1.5 text-xs text-destructive"
+          >
             {errors.phone.message}
           </p>
-        )}
+        ) : null}
       </div>
 
-     
-      {serverError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      {serverError ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/20 bg-destructive/5 px-3.5 py-3 text-sm leading-5 text-destructive"
+        >
           {serverError}
         </div>
-      )}
+      ) : null}
 
-      <div className="flex items-center justify-between border-t border-gray-200 pt-6">
+      <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-lg border border-gray-300 px-5 py-3 text-sm font-medium text-black"
+          disabled={isSubmitting}
+          className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-input bg-background px-5 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           Back
         </button>
@@ -165,7 +193,7 @@ export function ProfileForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-black px-6 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           {isSubmitting ? "Saving..." : "Continue"}
         </button>

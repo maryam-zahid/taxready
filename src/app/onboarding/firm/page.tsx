@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { getAdminProfile } from "@/services/auth-profile.service";
 import { getOrganizationForUser } from "@/services/organization.service";
+
 import { FirmForm } from "./firm-form";
 
 export default async function FirmSetupPage() {
@@ -16,55 +18,114 @@ export default async function FirmSetupPage() {
   }
 
   const profile = await getAdminProfile(
-    session.user.id
+    session.user.id,
   );
 
   if (!profile) {
     redirect("/onboarding/profile");
   }
 
-  const organization =
-    await getOrganizationForUser(
-      session.user.id
-    );
+  const organization = await getOrganizationForUser(
+    session.user.id,
+  );
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-10">
-      <h1 className="text-2xl font-semibold">
-        Set up your practice
-      </h1>
+    <div className="flex min-h-screen flex-col bg-muted/20">
+      <header className="border-b border-border bg-background">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link
+            href="/login"
+            className="inline-flex min-w-0 items-center gap-2.5"
+            aria-label="TaxReady"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-base font-bold text-primary-foreground">
+              T
+            </span>
 
-      <p className="mt-2 mb-8 text-sm text-gray-600">
-        Tell us how you work and add your practice
-        details.
-      </p>
+            <span className="truncate text-lg font-semibold tracking-tight text-foreground">
+              TaxReady
+            </span>
+          </Link>
 
-      <FirmForm
-        initialValues={{
-          practiceType:
-            organization?.practiceType ??
-            "INDEPENDENT_TAX_PROFESSIONAL",
+          <span className="text-xs text-muted-foreground sm:text-sm">
+            Account setup
+          </span>
+        </div>
+      </header>
 
-          name: organization?.name ?? "",
+      <main className="w-full flex-1 px-4 py-6 sm:px-6 sm:py-9">
+        <div className="mx-auto w-full max-w-3xl">
+          <div className="mb-5 sm:mb-6">
+            <div className="mb-2.5 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-primary">
+                Step 3 of 4
+              </p>
 
-          businessEmail:
-            organization?.businessEmail ?? "",
+              <p className="text-xs font-medium text-muted-foreground">
+                Practice details
+              </p>
+            </div>
 
-          businessPhone:
-            organization?.businessPhone ?? "",
+            <div
+              role="progressbar"
+              aria-label="Account setup progress"
+              aria-valuemin={0}
+              aria-valuemax={4}
+              aria-valuenow={3}
+              className="h-1.5 overflow-hidden rounded-full bg-muted"
+            >
+              <div className="h-full w-3/4 rounded-full bg-primary" />
+            </div>
+          </div>
 
-          ntn: organization?.ntn ?? "",
+          <section className="rounded-xl border border-border bg-background px-5 py-6 shadow-sm sm:px-8 sm:py-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+              Practice setup
+            </p>
 
-          country:
-            organization?.country ?? "Pakistan",
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-[28px]">
+              Set up your practice
+            </h1>
 
-          city: organization?.city ?? "",
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+              Tell us how you work and add your practice
+              details to personalize your TaxReady workspace.
+            </p>
 
-          address: organization?.address ?? "",
+            <FirmForm
+              initialValues={{
+                practiceType:
+                  organization?.practiceType ??
+                  "INDEPENDENT_TAX_PROFESSIONAL",
 
-          website: organization?.website ?? "",
-        }}
-      />
-    </main>
+                name: organization?.name ?? "",
+
+                businessEmail:
+                  organization?.businessEmail ?? "",
+
+                businessPhone:
+                  organization?.businessPhone ?? "",
+
+                ntn: organization?.ntn ?? "",
+
+                country:
+                  organization?.country ?? "Pakistan",
+
+                city: organization?.city ?? "",
+
+                address: organization?.address ?? "",
+
+                website: organization?.website ?? "",
+              }}
+            />
+          </section>
+        </div>
+      </main>
+
+      <footer className="px-4 pb-5 text-center text-xs text-muted-foreground">
+        © {new Date().getFullYear()} TaxReady. All rights
+        reserved.
+      </footer>
+    </div>
   );
 }

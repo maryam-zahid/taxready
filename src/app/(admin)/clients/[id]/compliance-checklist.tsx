@@ -22,9 +22,16 @@ type Requirement = {
   };
 };
 
+type ChecklistNavigation = {
+  requirementId: string;
+  requestId: string;
+  documentId: string | null;
+};
+
 type ComplianceChecklistProps = {
   clientId: string;
   requirements: Requirement[];
+  navigation: ChecklistNavigation[];
 };
 
 function formatLabel(value: string) {
@@ -101,6 +108,7 @@ function RequestClientLink({
 export function ComplianceChecklist({
   clientId,
   requirements,
+  navigation,
 }: ComplianceChecklistProps) {
   if (requirements.length === 0) {
     return (
@@ -165,16 +173,34 @@ export function ComplianceChecklist({
           {requirements.map((requirement) => {
             const definition =
               requirement.requirementDefinition;
+const destination = navigation.find(
+  (item) =>
+    item.requirementId === requirement.id,
+);
 
+const href = destination?.documentId
+  ? `/documents/${destination.documentId}`
+  : destination?.requestId
+    ? `/clients/${clientId}#request-${destination.requestId}`
+    : null;
             return (
               <div
                 key={requirement.id}
                 className="grid grid-cols-[minmax(0,1fr)_150px_120px_150px] items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/20"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold">
-                    {definition.title}
-                  </p>
+             {href ? (
+  <Link
+    href={href}
+    className="text-sm font-semibold text-foreground hover:text-primary hover:underline"
+  >
+    {definition.title}
+  </Link>
+) : (
+  <p className="text-sm font-semibold">
+    {definition.title}
+  </p>
+)}
 
                   {definition.description ? (
                     <p className="mt-1 line-clamp-2 max-w-3xl text-xs leading-5 text-muted-foreground">
@@ -234,16 +260,34 @@ export function ComplianceChecklist({
         {requirements.map((requirement) => {
           const definition =
             requirement.requirementDefinition;
+const destination = navigation.find(
+  (item) =>
+    item.requirementId === requirement.id,
+);
 
+const href = destination?.documentId
+  ? `/documents/${destination.documentId}`
+  : destination?.requestId
+    ? `#request-mobile-${destination.requestId}`
+    : null;
           return (
             <div
               key={requirement.id}
               className="px-4 py-4"
             >
               <div className="flex items-start justify-between gap-3">
-                <p className="min-w-0 text-sm font-semibold">
-                  {definition.title}
-                </p>
+              {href ? (
+  <Link
+    href={href}
+    className="min-w-0 text-sm font-semibold text-foreground hover:text-primary hover:underline"
+  >
+    {definition.title}
+  </Link>
+) : (
+  <p className="min-w-0 text-sm font-semibold">
+    {definition.title}
+  </p>
+)}
 
                 <StatusBadge
                   tone={getStatusTone(

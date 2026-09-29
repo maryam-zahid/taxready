@@ -146,7 +146,7 @@ export async function getClientRequestsForUser(
         requirementDefinition: true,
       },
     },
-    responses: {
+       responses: {
       where: {
         status: "SUBMITTED",
       },
@@ -154,6 +154,16 @@ export async function getClientRequestsForUser(
         submittedAt: "desc",
       },
       take: 1,
+    },
+    documents: {
+      orderBy: {
+        uploadedAt: "desc",
+      },
+      take: 1,
+      select: {
+        id: true,
+        status: true,
+      },
     },
   },
   orderBy: {

@@ -194,7 +194,7 @@ export default async function ClientDetailPage({
         requirement.requirementDefinition.title,
     }));
 
-  const requestItems = requests.map(
+   const requestItems = requests.map(
     (request) => ({
       id: request.id,
       clientRequirementId:
@@ -209,8 +209,17 @@ export default async function ClientDetailPage({
           .requirementDefinition.title,
       hasInformationResponse:
         request.responses.length > 0,
+      documentId:
+        request.documents[0]?.id ?? null,
     }),
   );
+  const checklistNavigation = requestItems.map(
+  (request) => ({
+    requirementId: request.clientRequirementId,
+    requestId: request.id,
+    documentId: request.documentId,
+  }),
+);
 
   const taxpayerOrEntityValue = isIndividual
     ? client.taxpayerType
@@ -628,10 +637,11 @@ export default async function ClientDetailPage({
             </div>
           </CardHeader>
 
-          <ComplianceChecklist
-            clientId={id}
-            requirements={requirements}
-          />
+         <ComplianceChecklist
+  clientId={id}
+  requirements={requirements}
+  navigation={checklistNavigation}
+/>
         </Card>
       </section>
 

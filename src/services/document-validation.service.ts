@@ -43,21 +43,23 @@ export async function runDocumentValidation(
           },
         },
       },
-      extraction: {
-  select: {
-    status: true,
-    fields: {
-      where: {
-        key: "tax_year",
+            extraction: {
+        select: {
+          status: true,
+          fields: {
+            where: {
+              key: {
+                in: ["tax_year", "statement_period"],
+              },
+            },
+            select: {
+              key: true,
+              textValue: true,
+              numericValue: true,
+            },
+          },
+        },
       },
-      select: {
-        textValue: true,
-        numericValue: true,
-      },
-      take: 1,
-    },
-  },
-},
     },
   });
 
@@ -91,21 +93,46 @@ export async function runDocumentValidation(
     document.clientRequirement?.taxYear ??
     document.client.taxYear;
 
-  const extractedTaxYearField =
-  document.extraction?.fields[0];
+   const extractedTaxYearField =
+    document.extraction?.fields.find(
+      (field) => field.key === "tax_year",
+    );
 
-const extractedTaxYear =
-  extractedTaxYearField?.numericValue !== null &&
-  extractedTaxYearField?.numericValue !== undefined
-    ? Number(extractedTaxYearField.numericValue)
-    : Number(extractedTaxYearField?.textValue);
+  const statementPeriodField =
+    document.extraction?.fields.find(
+      (field) => field.key === "statement_period",
+    );
 
-const detectedTaxYear =
-  Number.isInteger(extractedTaxYear) &&
-  extractedTaxYear >= 2000 &&
-  extractedTaxYear <= 2100
-    ? extractedTaxYear
-    : null;
+  const extractedTaxYear =
+    extractedTaxYearField?.numericValue !== null &&
+    extractedTaxYearField?.numericValue !== undefined
+      ? Number(extractedTaxYearField.numericValue)
+      : Number(extractedTaxYearField?.textValue);
+
+  let detectedTaxYear =
+    Number.isInteger(extractedTaxYear) &&
+    extractedTaxYear >= 2000 &&
+    extractedTaxYear <= 2100
+      ? extractedTaxYear
+      : null;
+
+  if (
+    detectedTaxYear === null &&
+    statementPeriodField?.textValue
+  ) {
+    const years =
+      statementPeriodField.textValue.match(
+        /\b20\d{2}\b/g,
+      );
+
+    if (years?.length) {
+      const uniqueYears = [...new Set(years)];
+
+      if (uniqueYears.length === 1) {
+        detectedTaxYear = Number(uniqueYears[0]);
+      }
+    }
+  }
 
   const taxYearCheck =
     detectedTaxYear === null

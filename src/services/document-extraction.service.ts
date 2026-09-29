@@ -253,11 +253,78 @@ function extractFields(text: string): ParsedField[] {
     /Net\s*Amount\s*[:\-]?\s*(?:PKR|Rs\.?)?\s*([\d,]+(?:\.\d{1,2})?)/i,
   ]);
 
-  addMoneyField(fields, {
-    key: "net_amount",
+    addMoneyField(fields, {
+            key: "net_amount",
     label: "Net Amount",
     value: netAmount?.value,
     sourceText: netAmount?.sourceText,
+  });
+
+  // Business bank statement fields
+  const accountTitle = extractFirstMatch(text, [
+    /Account\s*title\s*[:\-]?\s*([^\n]+)/i,
+  ]);
+
+  addTextField(fields, {
+    key: "account_title",
+    label: "Account Title",
+    value: accountTitle?.value,
+    sourceText: accountTitle?.sourceText,
+  });
+
+  const accountNumber = extractFirstMatch(text, [
+    /Account\s*number\s*[:\-]?\s*([^\n]+)/i,
+  ]);
+
+  addTextField(fields, {
+    key: "account_number",
+    label: "Account Number",
+    value: accountNumber?.value,
+    sourceText: accountNumber?.sourceText,
+  });
+
+  const iban = extractFirstMatch(text, [
+    /IBAN\s*[:\-]?\s*([^\n]+)/i,
+  ]);
+
+  addTextField(fields, {
+    key: "iban",
+    label: "IBAN",
+    value: iban?.value,
+    sourceText: iban?.sourceText,
+  });
+
+  const statementPeriod = extractFirstMatch(text, [
+    /Statement\s*period\s*[:\-]?\s*([^\n]+)/i,
+  ]);
+
+  addTextField(fields, {
+    key: "statement_period",
+    label: "Statement Period",
+    value: statementPeriod?.value,
+    sourceText: statementPeriod?.sourceText,
+  });
+
+  const openingBalance = extractFirstMatch(text, [
+    /Opening\s*balance\s*[:\-]?\s*(?:PKR|Rs\.?)?\s*([\d,]+(?:\.\d{1,2})?)/i,
+  ]);
+
+  addMoneyField(fields, {
+    key: "opening_balance",
+    label: "Opening Balance",
+    value: openingBalance?.value,
+    sourceText: openingBalance?.sourceText,
+  });
+
+  const closingBalance = extractFirstMatch(text, [
+    /Closing\s*balance\s*[:\-]?\s*(?:PKR|Rs\.?)?\s*([\d,]+(?:\.\d{1,2})?)/i,
+  ]);
+
+  addMoneyField(fields, {
+    key: "closing_balance",
+    label: "Closing Balance",
+    value: closingBalance?.value,
+    sourceText: closingBalance?.sourceText,
   });
 
   return fields;

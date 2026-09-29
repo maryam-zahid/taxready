@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { StatusBadge } from "@/components/taxready/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +52,7 @@ type ClientRequestItem = {
   sentAt: Date | string | null;
   requirementTitle: string;
   hasInformationResponse: boolean;
+  documentId: string | null;
 };
 
 type ClientRequestsProps = {
@@ -776,21 +778,29 @@ function handleDeleteDraft(
 
                 <div className="divide-y">
                   {requests.map((request) => (
-                    <div
-                      key={request.id}
-                      className="grid grid-cols-[minmax(0,2fr)_130px_130px_minmax(110px,auto)] items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/20"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {
-                            request.requirementTitle
-                          }
-                        </p>
+                  <div
+  key={request.id}
+  id={`request-${request.id}`}
+  className="grid scroll-mt-24 grid-cols-[minmax(0,2fr)_130px_130px_minmax(110px,auto)] items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/20 target:bg-primary/5"
+>
+ <div className="min-w-0">
+  <Link
+    href={
+      request.documentId
+        ? `/documents/${request.documentId}`
+        : `/clients/${clientId}?requestRequirement=${encodeURIComponent(
+            request.clientRequirementId,
+          )}#client-requests`
+    }
+    className="block truncate text-sm font-medium text-foreground hover:text-primary hover:underline"
+  >
+    {request.requirementTitle}
+  </Link>
 
-                        <p className="mt-1 truncate text-xs text-muted-foreground">
-                          {request.subject}
-                        </p>
-                      </div>
+  <p className="mt-1 truncate text-xs text-muted-foreground">
+    {request.subject}
+  </p>
+</div>
 
                       <p className="text-sm text-muted-foreground">
                         {formatDate(
@@ -831,22 +841,28 @@ function handleDeleteDraft(
               {/* Mobile */}
               <div className="divide-y min-[760px]:hidden">
                 {requests.map((request) => (
-                  <div
-                    key={request.id}
-                    className="px-4 py-4"
-                  >
+                 <div
+  key={request.id}
+  id={`request-mobile-${request.id}`}
+  className="px-4 py-4"
+>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium">
-                          {
-                            request.requirementTitle
-                          }
-                        </p>
+ <Link
+  href={
+    request.documentId
+      ? `/documents/${request.documentId}`
+      : `#request-mobile-${request.id}`
+  }
 
-                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                          {request.subject}
-                        </p>
-                      </div>
+  className="block text-sm font-medium text-foreground hover:text-primary hover:underline"
+>
+  {request.requirementTitle}
+</Link>
+  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+    {request.subject}
+  </p>
+</div>
 
                       <StatusBadge
                         tone={getRequestTone(

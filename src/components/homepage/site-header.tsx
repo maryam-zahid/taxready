@@ -41,8 +41,7 @@ export function SiteHeader({
           : "absolute bg-transparent",
       ].join(" ")}
     >
-      <div className="mx-auto flex h-[72px] w-full max-w-[1440px] items-center px-4 sm:px-6 lg:px-8">
-        {/* LOGO */}
+<div className="flex h-[60px] w-full items-center px-4 sm:px-5 lg:px-6">        {/* LOGO */}
         <div className="shrink-0">
           <TaxReadyLogo
             href="/"

@@ -106,8 +106,8 @@ export default async function ClientPortalPage() {
   return (
     <main className="min-h-full bg-background">
       <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        {/* Welcome */}
-        <section className="overflow-hidden rounded-2xl border bg-white">
+        {/* Welcome + progress */}
+        <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
           <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:p-7">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -125,55 +125,61 @@ export default async function ClientPortalPage() {
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                See what your tax practice needs from you,
-                submit requested information, and keep your
-                preparation moving forward.
+                See what&apos;s needed for your tax
+                preparation, submit requested information,
+                and keep everything moving forward.
               </p>
             </div>
 
             <Button
               nativeButton={false}
               render={<Link href="/portal/requests" />}
-              className="w-full lg:w-auto"
+              className="h-10 w-full rounded-xl px-5 shadow-sm lg:w-auto"
             >
               View my requests
               <ArrowRight className="size-4" />
             </Button>
           </div>
 
-          <div className="border-t bg-muted/20 px-5 py-4 sm:px-6 lg:px-7">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  Your preparation progress
-                </p>
+          <div className="border-t bg-slate-50/70 px-5 py-5 sm:px-6 lg:px-7 lg:py-6">
+            <div className="grid gap-6 md:grid-cols-[150px_minmax(0,1fr)] md:items-center lg:grid-cols-[170px_minmax(0,1fr)]">
+              <ProgressRing progress={progress} />
 
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Based on your current request status
-                </p>
+              <div className="min-w-0">
+                <div>
+                  <p className="text-base font-semibold text-foreground">
+                    Your preparation progress
+                  </p>
+
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Based on your current request status.
+                  </p>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <ProgressDetail
+                    label="Completed"
+                    value={`${completedRequests.length} of ${requests.length}`}
+                    success
+                  />
+
+                  <ProgressDetail
+                    label="Under review"
+                    value={String(submittedRequests.length)}
+                  />
+
+                  <ProgressDetail
+                    label="Actions remaining"
+                    value={String(pendingRequests.length)}
+                    attention={pendingRequests.length > 0}
+                  />
+                </div>
               </div>
-
-              <p className="text-xl font-semibold tabular-nums text-primary">
-                {progress}%
-              </p>
-            </div>
-
-            <div
-              className="mt-3 h-2 overflow-hidden rounded-full bg-muted"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={progress}
-            >
-              <div
-                className="h-full rounded-full bg-primary transition-[width] duration-500"
-                style={{ width: `${progress}%` }}
-              />
             </div>
           </div>
         </section>
 
-        {/* Client-friendly summary */}
+        {/* Summary */}
         <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <SummaryCard
             label="Action required"
@@ -186,7 +192,7 @@ export default async function ClientPortalPage() {
           <SummaryCard
             label="Submitted"
             value={submittedRequests.length}
-            description="With your practice"
+            description="Under review"
             icon={UploadCloud}
           />
 
@@ -207,8 +213,8 @@ export default async function ClientPortalPage() {
         </section>
 
         <section className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
-          {/* Main actions */}
-          <Card className="min-w-0 overflow-hidden">
+          {/* Actions */}
+          <Card className="min-w-0 overflow-hidden shadow-sm">
             <CardHeader className="border-b">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -246,26 +252,28 @@ export default async function ClientPortalPage() {
 
                 <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
                   There&apos;s nothing waiting for your
-                  response right now. New requests from your
-                  tax practice will appear here.
+                  response right now. New requests will
+                  appear here when action is needed.
                 </p>
               </CardContent>
             ) : (
               <div className="divide-y">
                 {pendingRequests.slice(0, 5).map((request) => (
-                  <Link
+                  <div
                     key={request.id}
-                    href={`/portal/requests/${request.id}`}
-                    className="group flex flex-col gap-4 px-5 py-5 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/30 sm:flex-row sm:items-center"
+                    className="group flex flex-col gap-4 px-5 py-5 transition-colors hover:bg-slate-50/80 sm:flex-row sm:items-center"
                   >
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <FileText className="size-[18px]" />
                     </span>
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-foreground">
+                      <Link
+                        href={`/portal/requests/${request.id}`}
+                        className="truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
+                      >
                         {request.subject}
-                      </p>
+                      </Link>
 
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span>Action required</span>
@@ -280,11 +288,20 @@ export default async function ClientPortalPage() {
                       </div>
                     </div>
 
-                    <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-primary">
+                    <Button
+                      nativeButton={false}
+                      size="sm"
+                      render={
+                        <Link
+                          href={`/portal/requests/${request.id}`}
+                        />
+                      }
+                      className="h-9 w-full shrink-0 rounded-lg px-4 shadow-sm sm:w-auto"
+                    >
                       Respond
                       <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </Link>
+                    </Button>
+                  </div>
                 ))}
 
                 {pendingRequests.length > 5 ? (
@@ -308,7 +325,7 @@ export default async function ClientPortalPage() {
 
           {/* Right rail */}
           <div className="grid min-w-0 gap-5 sm:grid-cols-2 lg:grid-cols-1">
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden shadow-sm">
               <CardHeader className="border-b">
                 <CardTitle className="text-base">
                   Next deadline
@@ -333,13 +350,12 @@ export default async function ClientPortalPage() {
                     <Button
                       nativeButton={false}
                       size="sm"
-                      variant="outline"
                       render={
                         <Link
                           href={`/portal/requests/${upcomingRequest.id}`}
                         />
                       }
-                      className="mt-5 w-full"
+                      className="mt-5 h-9 w-full rounded-lg shadow-sm"
                     >
                       View request
                       <ArrowRight className="size-4" />
@@ -360,7 +376,7 @@ export default async function ClientPortalPage() {
               </CardContent>
             </Card>
 
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden shadow-sm">
               <CardHeader className="border-b">
                 <CardTitle className="text-base">
                   Preparation details
@@ -374,7 +390,7 @@ export default async function ClientPortalPage() {
                 />
 
                 <DetailItem
-                  label="Tax practice"
+                  label="Account"
                   value={client.organization.name}
                 />
 
@@ -389,7 +405,7 @@ export default async function ClientPortalPage() {
 
         {/* Recently submitted */}
         <section className="mt-5">
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden shadow-sm">
             <CardHeader className="border-b">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -398,8 +414,8 @@ export default async function ClientPortalPage() {
                   </CardTitle>
 
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Items you&apos;ve sent to your tax
-                    practice for review.
+                    Items you&apos;ve submitted and are
+                    currently being reviewed.
                   </p>
                 </div>
 
@@ -422,37 +438,41 @@ export default async function ClientPortalPage() {
                   <Link
                     key={request.id}
                     href={`/portal/requests/${request.id}`}
-                    className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-muted/30"
+                    className="group flex items-center gap-3 px-5 py-4 transition-colors hover:bg-slate-50/80"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-primary">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <FileCheck2 className="size-4" />
                     </span>
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-foreground">
+                      <p className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
                         {request.subject}
                       </p>
 
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        Submitted for practice review
+                        Submitted for review
                       </p>
                     </div>
 
-                    <span className="hidden rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-primary sm:inline-flex">
+                    <span className="hidden rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary sm:inline-flex">
                       Submitted
                     </span>
                   </Link>
                 ))}
               </div>
             ) : (
-              <CardContent className="py-8 text-center">
-                <p className="text-sm font-medium text-foreground">
+              <CardContent className="flex flex-col items-center py-10 text-center">
+                <span className="flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <UploadCloud className="size-5" />
+                </span>
+
+                <p className="mt-3 text-sm font-semibold text-foreground">
                   No items currently under review
                 </p>
 
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">
                   Submitted requests will appear here while
-                  your practice reviews them.
+                  they&apos;re being reviewed.
                 </p>
               </CardContent>
             )}
@@ -460,6 +480,86 @@ export default async function ClientPortalPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+type ProgressRingProps = {
+  progress: number;
+};
+
+function ProgressRing({
+  progress,
+}: ProgressRingProps) {
+  const normalizedProgress = Math.min(
+    100,
+    Math.max(0, progress),
+  );
+
+  return (
+    <div className="flex justify-center md:justify-start">
+      <div
+        className="relative flex size-[138px] items-center justify-center rounded-full lg:size-[150px]"
+        style={{
+          background: `conic-gradient(hsl(var(--primary)) ${normalizedProgress * 3.6}deg, hsl(var(--muted)) 0deg)`,
+        }}
+        role="progressbar"
+        aria-label="Preparation progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={normalizedProgress}
+      >
+        <div className="absolute inset-[11px] rounded-full bg-white" />
+
+        <div className="relative z-10 text-center">
+          <p className="text-3xl font-semibold tracking-[-0.04em] tabular-nums text-foreground lg:text-4xl">
+            {normalizedProgress}%
+          </p>
+
+          <p className="mt-1 text-[11px] font-medium text-muted-foreground">
+            preparation complete
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type ProgressDetailProps = {
+  label: string;
+  value: string;
+  success?: boolean;
+  attention?: boolean;
+};
+
+function ProgressDetail({
+  label,
+  value,
+  success = false,
+  attention = false,
+}: ProgressDetailProps) {
+  return (
+    <div className="rounded-xl border bg-white px-4 py-3">
+      <div className="flex items-center gap-2">
+        <span
+          className={[
+            "size-2 rounded-full",
+            attention
+              ? "bg-amber-500"
+              : success
+                ? "bg-emerald-500"
+                : "bg-primary",
+          ].join(" ")}
+        />
+
+        <p className="text-xs font-medium text-muted-foreground">
+          {label}
+        </p>
+      </div>
+
+      <p className="mt-2 text-lg font-semibold tabular-nums text-foreground">
+        {value}
+      </p>
+    </div>
   );
 }
 
@@ -487,7 +587,7 @@ function SummaryCard({
       : "bg-primary/10 text-primary";
 
   return (
-    <Card className="min-w-0">
+    <Card className="min-w-0 shadow-sm transition-shadow hover:shadow-md">
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

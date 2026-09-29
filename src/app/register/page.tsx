@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { signUp } from "@/lib/auth-client";
-
+import { TaxReadyLogo } from "@/components/taxready/taxready-logo";
 const registerSchema = z
   .object({
     email: z
@@ -97,28 +97,34 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/20">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/login"
-            className="inline-flex min-w-0 items-center gap-2.5"
-            aria-label="TaxReady login"
-          >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-base font-bold text-primary-foreground">
-              T
-            </span>
+   <header className="border-b border-white/10 bg-primary text-primary-foreground shadow-sm">
+  <div className="flex h-[60px] w-full items-center justify-between gap-4 px-4 sm:px-5 lg:px-6">
+<TaxReadyLogo href="/" light />
+    <nav className="flex items-center gap-1">
+      <Link
+        href="/"
+        className="hidden rounded-lg px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
+      >
+        Home
+      </Link>
 
-            <span className="truncate text-lg font-semibold tracking-tight text-foreground">
-              TaxReady
-            </span>
-          </Link>
+      <Link
+        href="/login"
+        className="rounded-lg px-3 py-2 text-sm font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+      >
+        Login
+      </Link>
 
-          <span className="text-xs text-muted-foreground sm:text-sm">
-            Secure registration
-          </span>
-        </div>
-      </header>
-
+      <Link
+        href="/register"
+        aria-current="page"
+        className="ml-1 inline-flex h-9 items-center justify-center rounded-lg bg-white px-4 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-white/90"
+      >
+        Get Started
+      </Link>
+    </nav>
+  </div>
+</header>
       <main className="flex w-full flex-1 items-center justify-center px-4 py-5 sm:px-6 sm:py-7">
         <section className="w-full max-w-[480px] rounded-xl border border-border bg-background px-5 py-6 shadow-sm sm:px-7 sm:py-7">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">

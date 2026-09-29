@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
+  Check,
   CheckCircle2,
   CircleAlert,
   ClipboardCheck,
@@ -103,19 +104,6 @@ function getReadinessTone(
       return "danger";
     default:
       return "warning";
-  }
-}
-
-function getReadinessBarClass(status: string) {
-  switch (status) {
-    case "TAX_READY":
-      return "bg-emerald-600";
-    case "READY_FOR_REVIEW":
-      return "bg-blue-600";
-    case "BLOCKED":
-      return "bg-red-600";
-    default:
-      return "bg-amber-500";
   }
 }
 
@@ -246,11 +234,6 @@ export default async function ClientDetailPage({
       }).format(client.preparationDeadline)
     : "Not set";
 
-  /*
-   * These request figures are intentionally derived only
-   * from the statuses already returned by the existing
-   * request service.
-   */
   const outstandingRequests = requests.filter(
     (request) =>
       request.status === "SENT" ||
@@ -258,11 +241,13 @@ export default async function ClientDetailPage({
   ).length;
 
   const submittedRequests = requests.filter(
-    (request) => request.status === "SUBMITTED",
+    (request) =>
+      request.status === "SUBMITTED",
   ).length;
 
   const completedRequests = requests.filter(
-    (request) => request.status === "COMPLETED",
+    (request) =>
+      request.status === "COMPLETED",
   ).length;
 
   const incompleteRequired = Math.max(
@@ -271,22 +256,29 @@ export default async function ClientDetailPage({
     0,
   );
 
+  const reviewedRequests =
+    submittedRequests + completedRequests;
+
+  const attentionCount =
+    incompleteRequired +
+    readiness.blockingExceptionCount;
+
   return (
-    <div className="app-page">
-      {/* Back navigation */}
+    <div className="w-full max-w-[1480px] px-4 py-5 sm:px-6 lg:px-7">
+      {/* Back */}
       <Button
         nativeButton={false}
         variant="ghost"
         size="sm"
         render={<Link href="/clients" />}
-        className="-ml-2 mb-4"
+        className="-ml-2 mb-3"
       >
         <ArrowLeft className="size-4" />
         Back to clients
       </Button>
 
       {/* Client header */}
-      <section className="overflow-hidden rounded-2xl border bg-card">
+      <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
         <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -315,11 +307,11 @@ export default async function ClientDetailPage({
               </StatusBadge>
             </div>
 
-            <h1 className="mt-4 break-words text-2xl font-semibold tracking-[-0.035em] text-foreground sm:text-3xl">
+            <h1 className="mt-3 break-words text-2xl font-semibold tracking-[-0.035em] text-foreground sm:text-3xl">
               {clientName}
             </h1>
 
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {clientTypeLabel} client · Tax year{" "}
               {client.taxYear}
             </p>
@@ -357,17 +349,16 @@ export default async function ClientDetailPage({
         </div>
       </section>
 
-      {/* Primary readiness workspace */}
-      <section className="mt-5 overflow-hidden rounded-2xl border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-        <div className="flex flex-col gap-5 border-b px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+      {/* Readiness */}
+      <section className="mt-4 overflow-hidden rounded-2xl border bg-white shadow-sm">
+        <div className="flex flex-col gap-4 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             <p className="text-lg font-semibold tracking-tight text-foreground">
               Preparation readiness
             </p>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Current preparation status for{" "}
-              {clientName}
+              {clientName} · FY {client.taxYear}
             </p>
           </div>
 
@@ -380,10 +371,6 @@ export default async function ClientDetailPage({
               {formatLabel(readiness.status)}
             </StatusBadge>
 
-            <span className="inline-flex rounded-full bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold tabular-nums text-emerald-700">
-              {readiness.percentage}% ready
-            </span>
-
             {readiness.status ===
             "READY_FOR_REVIEW" ? (
               <MarkTaxReadyButton
@@ -393,123 +380,125 @@ export default async function ClientDetailPage({
           </div>
         </div>
 
-        {/* Metrics */}
-        <div className="grid gap-3 bg-muted/20 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
-          <ReadinessMetric
-            label="Requirements"
-            value={`${readiness.completedRequired} / ${readiness.totalRequired}`}
-            description={
-              incompleteRequired > 0
-                ? `${incompleteRequired} outstanding`
-                : "All required items complete"
-            }
-            icon={ClipboardCheck}
+        <div className="grid gap-7 px-5 py-6 sm:px-6 lg:grid-cols-[210px_minmax(0,1fr)] lg:items-center lg:gap-10">
+          <ReadinessRing
+            percentage={readiness.percentage}
+            status={readiness.status}
           />
 
-          <ReadinessMetric
-            label="Requests"
-            value={String(requests.length)}
-            description={
-              outstandingRequests > 0
-                ? `${outstandingRequests} waiting on client`
-                : "No client action outstanding"
-            }
-            icon={ClipboardList}
-          />
-
-          <ReadinessMetric
-            label="Submitted"
-            value={String(submittedRequests)}
-            description={
-              submittedRequests > 0
-                ? "Awaiting practice review"
-                : `${completedRequests} completed`
-            }
-            icon={FileCheck2}
-          />
-
-          <ReadinessMetric
-            label="Exceptions"
-            value={String(
-              readiness.blockingExceptionCount,
-            )}
-            description={
-              readiness.blockingExceptionCount > 0
-                ? "Blocking readiness"
-                : "No blocking exceptions"
-            }
-            icon={CircleAlert}
-            danger={
-              readiness.blockingExceptionCount > 0
-            }
-          />
-        </div>
-
-        {/* Progress + operational status */}
-        <div className="border-t px-5 py-5 sm:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Required checklist completion
+              <p className="text-base font-semibold text-foreground">
+                Client file progress
               </p>
 
-              <p className="mt-2 text-sm text-foreground">
-                <span className="font-semibold">
-                  {readiness.completedRequired}
-                </span>{" "}
-                of{" "}
-                <span className="font-semibold">
-                  {readiness.totalRequired}
-                </span>{" "}
-                required items completed
+              <p className="mt-1 text-sm text-muted-foreground">
+                Readiness reflects collection, review and
+                preparation checks.
               </p>
             </div>
 
-            <p className="text-2xl font-semibold tracking-[-0.035em] tabular-nums text-foreground">
-              {readiness.percentage}%
-            </p>
-          </div>
+            <div className="mt-4 divide-y">
+              <ReadinessLine
+                label="Checklist"
+                value={`${readiness.completedRequired} / ${readiness.totalRequired}`}
+                complete={incompleteRequired === 0}
+              />
 
-          <div
-            className="mt-4 h-2.5 overflow-hidden rounded-full bg-muted"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={
-              readiness.percentage
-            }
-          >
-            <div
-              className={`h-full rounded-full transition-[width] duration-500 ${getReadinessBarClass(
-                readiness.status,
-              )}`}
-              style={{
-                width: `${readiness.percentage}%`,
-              }}
-            />
-          </div>
+              <ReadinessLine
+                label="Requests reviewed"
+                value={`${completedRequests} / ${requests.length}`}
+                complete={
+                  requests.length > 0 &&
+                  completedRequests === requests.length
+                }
+              />
 
+              <ReadinessLine
+                label="Open requests"
+                value={String(outstandingRequests)}
+                attention={outstandingRequests > 0}
+              />
+
+              <ReadinessLine
+                label="Unresolved issues"
+                value={String(
+                  readiness.blockingExceptionCount,
+                )}
+                attention={
+                  readiness.blockingExceptionCount > 0
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 pb-6 sm:px-6">
           <ReadinessMessage
             status={readiness.status}
             blockingExceptions={
               readiness.blockingExceptionCount
             }
+            attentionCount={attentionCount}
           />
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <ReadinessSummary
+              title="Document review"
+              description={`${completedRequests} of ${requests.length} reviewed`}
+              complete={
+                requests.length > 0 &&
+                completedRequests === requests.length
+              }
+            />
+
+            <ReadinessSummary
+              title="Preparation checklist"
+              description={`${readiness.completedRequired} of ${readiness.totalRequired} completed`}
+              complete={incompleteRequired === 0}
+            />
+
+            <ReadinessSummary
+              title="Submitted"
+              description={
+                submittedRequests > 0
+                  ? `${submittedRequests} awaiting review`
+                  : "Nothing awaiting review"
+              }
+              complete={submittedRequests === 0}
+              attention={submittedRequests > 0}
+            />
+
+            <ReadinessSummary
+              title="Open issues"
+              description={
+                readiness.blockingExceptionCount > 0
+                  ? `${readiness.blockingExceptionCount} unresolved`
+                  : "No blocking issues"
+              }
+              complete={
+                readiness.blockingExceptionCount === 0
+              }
+              attention={
+                readiness.blockingExceptionCount > 0
+              }
+            />
+          </div>
         </div>
       </section>
 
-      {/* Client information */}
-      <section className="mt-5">
-        <Card className="overflow-hidden">
-          <CardHeader className="border-b">
+      {/* Compact client details */}
+      <section className="mt-4">
+        <Card className="overflow-hidden shadow-sm">
+          <CardHeader className="border-b px-5 py-4 sm:px-6">
             <div>
               <CardTitle className="text-base">
                 Client details
               </CardTitle>
 
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Identity, contact information and current
-                preparation details.
+              <p className="mt-1 text-sm text-muted-foreground">
+                Identity, contact and preparation
+                information.
               </p>
             </div>
           </CardHeader>
@@ -544,9 +533,7 @@ export default async function ClientDetailPage({
                         ? "Taxpayer type"
                         : "Entity type"
                     }
-                    value={
-                      taxpayerOrEntityValue
-                    }
+                    value={taxpayerOrEntityValue}
                   />
 
                   <DetailRow
@@ -556,9 +543,7 @@ export default async function ClientDetailPage({
                         ? "Profession / occupation"
                         : "Business activity"
                     }
-                    value={
-                      occupationOrActivity
-                    }
+                    value={occupationOrActivity}
                   />
 
                   {!isIndividual ? (
@@ -583,9 +568,7 @@ export default async function ClientDetailPage({
                   <DetailRow
                     icon={CalendarDays}
                     label="Tax year"
-                    value={String(
-                      client.taxYear,
-                    )}
+                    value={String(client.taxYear)}
                   />
 
                   <DetailRow
@@ -617,10 +600,10 @@ export default async function ClientDetailPage({
         </Card>
       </section>
 
-      {/* Existing real checklist */}
-      <section className="mt-5">
-        <Card className="overflow-hidden">
-          <CardHeader className="border-b">
+      {/* Checklist */}
+      <section className="mt-4">
+        <Card className="overflow-hidden shadow-sm">
+          <CardHeader className="border-b px-5 py-4 sm:px-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <CardTitle className="text-base">
@@ -652,7 +635,7 @@ export default async function ClientDetailPage({
         </Card>
       </section>
 
-      {/* Preserve portal management */}
+      {/* Existing workflows unchanged */}
       <PortalAccess
         clientId={id}
         email={portalData.email}
@@ -697,7 +680,6 @@ export default async function ClientDetailPage({
         }
       />
 
-      {/* Preserve request workflow */}
       <ClientRequests
         key={
           requestedRequirementId ??
@@ -716,52 +698,142 @@ export default async function ClientDetailPage({
   );
 }
 
-function ReadinessMetric({
+function ReadinessRing({
+  percentage,
+  status,
+}: {
+  percentage: number;
+  status: string;
+}) {
+  const normalized = Math.max(
+    0,
+    Math.min(100, percentage),
+  );
+
+  const ringColor =
+    status === "TAX_READY"
+      ? "#059669"
+      : status === "BLOCKED"
+        ? "#dc2626"
+        : status === "IN_PROGRESS"
+          ? "#f59e0b"
+          : "#2563eb";
+
+  return (
+    <div className="flex justify-center">
+      <div
+        className="relative flex size-[170px] items-center justify-center rounded-full"
+        style={{
+          background: `conic-gradient(${ringColor} ${normalized * 3.6}deg, #eef2f7 0deg)`,
+        }}
+        role="progressbar"
+        aria-label="Preparation readiness"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={normalized}
+      >
+        <div className="absolute inset-[12px] rounded-full bg-white" />
+
+        <div className="relative z-10 text-center">
+          <p className="text-4xl font-semibold tracking-[-0.05em] tabular-nums text-foreground">
+            {normalized}%
+          </p>
+
+          <p className="mt-1 text-xs font-medium text-muted-foreground">
+            preparation ready
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReadinessLine({
   label,
   value,
-  description,
-  icon: Icon,
-  danger = false,
+  complete = false,
+  attention = false,
 }: {
   label: string;
   value: string;
-  description: string;
-  icon: typeof ClipboardCheck;
-  danger?: boolean;
+  complete?: boolean;
+  attention?: boolean;
 }) {
   return (
-    <div className="rounded-xl border bg-white p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          {label}
-        </p>
-
-        <span
-          className={[
-            "flex size-8 shrink-0 items-center justify-center rounded-lg",
-            danger
-              ? "bg-red-500/10 text-red-600"
-              : "bg-primary/10 text-primary",
-          ].join(" ")}
-        >
-          <Icon className="size-4" />
-        </span>
-      </div>
-
-      <p className="mt-3 text-2xl font-semibold tracking-[-0.035em] tabular-nums text-foreground">
-        {value}
-      </p>
-
-      <p
+    <div className="flex items-center gap-3 py-3">
+      <span
         className={[
-          "mt-1 text-xs leading-5",
-          danger
-            ? "font-medium text-red-600"
-            : "text-muted-foreground",
+          "flex size-7 shrink-0 items-center justify-center rounded-full",
+          attention
+            ? "bg-amber-500/10 text-amber-700"
+            : complete
+              ? "bg-emerald-500/10 text-emerald-700"
+              : "bg-primary/10 text-primary",
         ].join(" ")}
       >
-        {description}
+        {attention ? (
+          <CircleAlert className="size-3.5" />
+        ) : complete ? (
+          <Check className="size-3.5" />
+        ) : (
+          <ClipboardCheck className="size-3.5" />
+        )}
+      </span>
+
+      <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+        {label}
       </p>
+
+      <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function ReadinessSummary({
+  title,
+  description,
+  complete = false,
+  attention = false,
+}: {
+  title: string;
+  description: string;
+  complete?: boolean;
+  attention?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border bg-slate-50/50 p-4">
+      <div className="flex items-start gap-3">
+        <span
+          className={[
+            "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
+            attention
+              ? "bg-amber-500/10 text-amber-700"
+              : complete
+                ? "bg-emerald-500/10 text-emerald-700"
+                : "bg-primary/10 text-primary",
+          ].join(" ")}
+        >
+          {attention ? (
+            <CircleAlert className="size-4" />
+          ) : complete ? (
+            <Check className="size-4" />
+          ) : (
+            <ClipboardList className="size-4" />
+          )}
+        </span>
+
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">
+            {title}
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -769,21 +841,23 @@ function ReadinessMetric({
 function ReadinessMessage({
   status,
   blockingExceptions,
+  attentionCount,
 }: {
   status: string;
   blockingExceptions: number;
+  attentionCount: number;
 }) {
   if (status === "TAX_READY") {
     return (
-      <div className="mt-5 flex gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-4">
-        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-700" />
+      <div className="flex gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-4">
+        <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-700" />
 
         <div>
           <p className="text-sm font-semibold text-emerald-800">
             Preparation complete
           </p>
 
-          <p className="mt-1 text-xs leading-5 text-emerald-800/80">
+          <p className="mt-1 text-sm leading-6 text-emerald-800/80">
             This client has been marked tax-ready.
           </p>
         </div>
@@ -793,19 +867,19 @@ function ReadinessMessage({
 
   if (status === "BLOCKED") {
     return (
-      <div className="mt-5 flex gap-3 rounded-xl border border-red-500/20 bg-red-500/[0.05] p-4">
-        <CircleAlert className="mt-0.5 size-4 shrink-0 text-red-600" />
+      <div className="flex gap-3 rounded-xl border border-red-500/20 bg-red-500/[0.05] p-4">
+        <CircleAlert className="mt-0.5 size-5 shrink-0 text-red-600" />
 
         <div>
           <p className="text-sm font-semibold text-red-700">
             Preparation is blocked
           </p>
 
-          <p className="mt-1 text-xs leading-5 text-red-700/80">
+          <p className="mt-1 text-sm leading-6 text-red-700/80">
             Resolve {blockingExceptions} blocking{" "}
             {blockingExceptions === 1
-              ? "exception"
-              : "exceptions"}{" "}
+              ? "issue"
+              : "issues"}{" "}
             before this client can become tax-ready.
           </p>
         </div>
@@ -815,17 +889,17 @@ function ReadinessMessage({
 
   if (status === "READY_FOR_REVIEW") {
     return (
-      <div className="mt-5 flex gap-3 rounded-xl border border-blue-500/20 bg-blue-500/[0.05] p-4">
-        <FileCheck2 className="mt-0.5 size-4 shrink-0 text-blue-600" />
+      <div className="flex gap-3 rounded-xl border border-blue-500/20 bg-blue-500/[0.05] p-4">
+        <FileCheck2 className="mt-0.5 size-5 shrink-0 text-blue-600" />
 
         <div>
           <p className="text-sm font-semibold text-blue-700">
-            Ready for practitioner review
+            Ready for final review
           </p>
 
-          <p className="mt-1 text-xs leading-5 text-blue-700/80">
+          <p className="mt-1 text-sm leading-6 text-blue-700/80">
             Required preparation items are complete.
-            Perform the final review before marking the
+            Complete the final review before marking the
             client tax-ready.
           </p>
         </div>
@@ -834,17 +908,23 @@ function ReadinessMessage({
   }
 
   return (
-    <div className="mt-5 flex gap-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4">
-      <CircleAlert className="mt-0.5 size-4 shrink-0 text-amber-700" />
+    <div className="flex gap-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4">
+      <CircleAlert className="mt-0.5 size-5 shrink-0 text-amber-700" />
 
       <div>
         <p className="text-sm font-semibold text-amber-800">
-          Preparation still in progress
+          {attentionCount > 0
+            ? `${attentionCount} ${
+                attentionCount === 1
+                  ? "item requires"
+                  : "items require"
+              } attention`
+            : "Preparation in progress"}
         </p>
 
-        <p className="mt-1 text-xs leading-5 text-amber-800/80">
-          Complete the outstanding requirements and resolve
-          any preparation issues before final review.
+        <p className="mt-1 text-sm leading-6 text-amber-800/80">
+          Complete the remaining information and resolve
+          preparation issues before final review.
         </p>
       </div>
     </div>
@@ -857,7 +937,7 @@ function DetailSectionHeader({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-b bg-muted/20 px-5 py-3">
+    <div className="border-b bg-muted/20 px-5 py-2.5">
       <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
         {children}
       </p>
@@ -875,7 +955,7 @@ function DetailRow({
   value: string;
 }) {
   return (
-    <div className="grid gap-2 px-5 py-3.5 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center sm:gap-5">
+    <div className="grid gap-2 px-5 py-3 sm:grid-cols-[155px_minmax(0,1fr)] sm:items-center sm:gap-4">
       <div className="flex items-center gap-2">
         <Icon className="size-3.5 shrink-0 text-muted-foreground" />
 

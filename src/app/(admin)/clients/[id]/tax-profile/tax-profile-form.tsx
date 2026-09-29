@@ -2,6 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Banknote,
+  BriefcaseBusiness,
+  Building2,
+  Check,
+  ChevronRight,
+  CircleDollarSign,
+  FileCheck2,
+  FileText,
+  Landmark,
+  NotebookPen,
+  Save,
+  UserRoundCheck,
+  WalletCards,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import { saveTaxProfileAction } from "./actions";
 
@@ -391,105 +409,95 @@ export function TaxProfileForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-8"
+      className="space-y-4"
     >
-      <section>
-        <h2 className="text-lg font-semibold">
-          1. Filing History
-        </h2>
+      {/* Filing history */}
+      <ProfileSection
+        number="01"
+        title="Filing History"
+        description="Set the client's filing history and indicate whether prior records are available."
+        icon={FileText}
+      >
+        <div className="grid gap-3 lg:grid-cols-3">
+          <ChoiceCard
+            type="radio"
+            name="filingHistoryStatus"
+            checked={
+              filingHistoryStatus === "NEW_FILER"
+            }
+            onChange={() =>
+              setFilingHistoryStatus("NEW_FILER")
+            }
+            title="New Filer"
+            description="No previous filing history."
+          />
 
-        <div className="mt-3 space-y-2">
-          <label className="block">
-            <input
-              type="radio"
-              name="filingHistoryStatus"
-              checked={
-                filingHistoryStatus ===
-                "NEW_FILER"
-              }
-              onChange={() =>
-                setFilingHistoryStatus(
-                  "NEW_FILER",
-                )
-              }
-            />{" "}
-            New Filer
-          </label>
+          <ChoiceCard
+            type="radio"
+            name="filingHistoryStatus"
+            checked={
+              filingHistoryStatus ===
+              "EXISTING_FILER"
+            }
+            onChange={() =>
+              setFilingHistoryStatus(
+                "EXISTING_FILER",
+              )
+            }
+            title="Existing Filer"
+            description="Previous filing history exists."
+          />
 
-          <label className="block">
-            <input
-              type="radio"
-              name="filingHistoryStatus"
-              checked={
-                filingHistoryStatus ===
-                "EXISTING_FILER"
-              }
-              onChange={() =>
-                setFilingHistoryStatus(
-                  "EXISTING_FILER",
-                )
-              }
-            />{" "}
-            Existing Filer
-          </label>
-
-          <label className="block">
-            <input
-              type="radio"
-              name="filingHistoryStatus"
-              checked={
-                filingHistoryStatus ===
-                "PREVIOUS_RETURN_UNAVAILABLE"
-              }
-              onChange={() =>
-                setFilingHistoryStatus(
-                  "PREVIOUS_RETURN_UNAVAILABLE",
-                )
-              }
-            />{" "}
-            Previous Return Unavailable
-          </label>
+          <ChoiceCard
+            type="radio"
+            name="filingHistoryStatus"
+            checked={
+              filingHistoryStatus ===
+              "PREVIOUS_RETURN_UNAVAILABLE"
+            }
+            onChange={() =>
+              setFilingHistoryStatus(
+                "PREVIOUS_RETURN_UNAVAILABLE",
+              )
+            }
+            title="Previous Return Unavailable"
+            description="Prior return cannot be provided."
+          />
         </div>
 
-        <div className="mt-4 space-y-2">
-          <label className="block">
-            <input
-              type="checkbox"
-              checked={
-                previousTaxReturnAvailable
-              }
-              onChange={(event) =>
-                setPreviousTaxReturnAvailable(
-                  event.target.checked,
-                )
-              }
-            />{" "}
-            Previous Tax Return Available
-          </label>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <CompactCheck
+            checked={previousTaxReturnAvailable}
+            onChange={(checked) =>
+              setPreviousTaxReturnAvailable(
+                checked,
+              )
+            }
+            label="Previous Tax Return Available"
+          />
 
-          <label className="block">
-            <input
-              type="checkbox"
-              checked={
-                previousWealthStatementAvailable
-              }
-              onChange={(event) =>
-                setPreviousWealthStatementAvailable(
-                  event.target.checked,
-                )
-              }
-            />{" "}
-            Previous Wealth Statement Available
-          </label>
+          <CompactCheck
+            checked={
+              previousWealthStatementAvailable
+            }
+            onChange={(checked) =>
+              setPreviousWealthStatementAvailable(
+                checked,
+              )
+            }
+            label="Previous Wealth Statement Available"
+          />
         </div>
-      </section>
+      </ProfileSection>
 
-      <section>
-        <h2 className="text-lg font-semibold">
-          2. Sources of Income
-        </h2>
-
-        <div className="mt-3 space-y-2">
+      {/* Income */}
+      <ProfileSection
+        number="02"
+        title="Sources of Income"
+        description="Select all applicable income sources. Add declared annual amounts where available."
+        icon={CircleDollarSign}
+      >
+        <div className="grid gap-3 lg:grid-cols-2">
           {incomeSourceOptions.map((option) => {
             const selected =
               incomeSources.includes(
@@ -499,9 +507,14 @@ export function TaxProfileForm({
             return (
               <div
                 key={option.value}
-                className="rounded-lg border p-3"
+                className={[
+                  "rounded-xl border p-4 transition-colors",
+                  selected
+                    ? "border-primary/30 bg-primary/[0.035]"
+                    : "bg-white hover:bg-muted/20",
+                ].join(" ")}
               >
-                <label className="flex items-center gap-2">
+                <label className="flex cursor-pointer items-center gap-3">
                   <input
                     type="checkbox"
                     checked={selected}
@@ -512,21 +525,30 @@ export function TaxProfileForm({
                         setIncomeSources,
                       )
                     }
+                    className="size-4 rounded border-input accent-primary"
                   />
 
-                  <span>{option.label}</span>
+                  <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
+                    {option.label}
+                  </span>
+
+                  {selected && (
+                    <span className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="size-3.5" />
+                    </span>
+                  )}
                 </label>
 
                 {selected ? (
-                  <div className="mt-3 max-w-sm">
+                  <div className="mt-4 border-t pt-3">
                     <label
                       htmlFor={`declared-${option.value}`}
-                      className="mb-1 block text-sm font-medium"
+                      className="mb-1.5 block text-xs font-medium text-muted-foreground"
                     >
                       Declared annual amount (PKR)
                     </label>
 
-                    <input
+                    <Input
                       id={`declared-${option.value}`}
                       type="number"
                       min="0"
@@ -546,14 +568,13 @@ export function TaxProfileForm({
                           }),
                         )
                       }
-                      placeholder="Optional"
-                      className="w-full rounded-md border px-3 py-2 text-sm"
+                      placeholder="Optional amount"
+                      className="h-10 max-w-sm"
                     />
 
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Optional. Used to compare
-                      declared income with supporting
-                      documents.
+                    <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                      Used for basic reconciliation with
+                      supported documents.
                     </p>
                   </div>
                 ) : null}
@@ -561,212 +582,146 @@ export function TaxProfileForm({
             );
           })}
         </div>
-      </section>
+      </ProfileSection>
 
-      <section>
-        <h2 className="text-lg font-semibold">
-          3. Assets & Wealth
-        </h2>
-
-        <div className="mt-3 space-y-2">
+      {/* Assets */}
+      <ProfileSection
+        number="03"
+        title="Assets & Wealth"
+        description="Identify applicable assets and record optional wealth movement values."
+        icon={Landmark}
+      >
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {assetOptions.map((option) => (
-            <label
+            <CompactCheck
               key={option.value}
-              className="block"
-            >
-              <input
-                type="checkbox"
-                checked={assetTypes.includes(
+              checked={assetTypes.includes(
+                option.value,
+              )}
+              onChange={() =>
+                toggleValue(
+                  assetTypes,
                   option.value,
-                )}
-                onChange={() =>
-                  toggleValue(
-                    assetTypes,
-                    option.value,
-                    setAssetTypes,
-                  )
-                }
-              />{" "}
-              {option.label}
-            </label>
-          ))}
-
-          <label className="block">
-            <input
-              type="checkbox"
-              checked={hasLiabilities}
-              onChange={(event) =>
-                setHasLiabilities(
-                  event.target.checked,
+                  setAssetTypes,
                 )
               }
-            />{" "}
-            Liabilities / Loans
-          </label>
+              label={option.label}
+            />
+          ))}
+
+          <CompactCheck
+            checked={hasLiabilities}
+            onChange={setHasLiabilities}
+            label="Liabilities / Loans"
+          />
         </div>
 
-        <div className="mt-6 rounded-lg border p-4">
-          <div>
-            <h3 className="font-semibold">
-              Wealth Movement
-            </h3>
+        <div className="mt-5 overflow-hidden rounded-xl border">
+          <div className="border-b bg-muted/20 px-4 py-3.5 sm:px-5">
+            <div className="flex items-start gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <WalletCards className="size-4" />
+              </span>
 
-            <p className="mt-1 text-sm text-muted-foreground">
-              Optional preparation check. Enter all
-              four values to compare expected closing
-              wealth with the declared closing wealth.
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">
+                  Wealth Movement
+                </h3>
+
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Optional. Enter all four values to
+                  compare expected closing wealth with
+                  declared closing wealth.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
+            <MoneyField
+              label="Opening wealth"
+              value={openingWealth}
+              onChange={setOpeningWealth}
+            />
+
+            <MoneyField
+              label="Wealth additions"
+              value={wealthAdditions}
+              onChange={setWealthAdditions}
+            />
+
+            <MoneyField
+              label="Wealth reductions"
+              value={wealthReductions}
+              onChange={setWealthReductions}
+            />
+
+            <MoneyField
+              label="Closing wealth"
+              value={closingWealth}
+              onChange={setClosingWealth}
+            />
+          </div>
+
+          <div className="border-t bg-muted/10 px-4 py-3 sm:px-5">
+            <p className="text-xs text-muted-foreground">
+              Expected closing wealth = opening wealth +
+              additions − reductions.
             </p>
           </div>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium">
-                Opening wealth (PKR)
-              </span>
-
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                value={openingWealth}
-                onChange={(event) =>
-                  setOpeningWealth(
-                    event.target.value,
-                  )
-                }
-                placeholder="Optional"
-                className="w-full rounded-md border px-3 py-2 text-sm"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium">
-                Wealth additions (PKR)
-              </span>
-
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                value={wealthAdditions}
-                onChange={(event) =>
-                  setWealthAdditions(
-                    event.target.value,
-                  )
-                }
-                placeholder="Optional"
-                className="w-full rounded-md border px-3 py-2 text-sm"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium">
-                Wealth reductions (PKR)
-              </span>
-
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                value={wealthReductions}
-                onChange={(event) =>
-                  setWealthReductions(
-                    event.target.value,
-                  )
-                }
-                placeholder="Optional"
-                className="w-full rounded-md border px-3 py-2 text-sm"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium">
-                Closing wealth (PKR)
-              </span>
-
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                value={closingWealth}
-                onChange={(event) =>
-                  setClosingWealth(
-                    event.target.value,
-                  )
-                }
-                placeholder="Optional"
-                className="w-full rounded-md border px-3 py-2 text-sm"
-              />
-            </label>
-          </div>
-
-          <p className="mt-4 text-xs text-muted-foreground">
-            Expected closing wealth = opening wealth +
-            additions - reductions.
-          </p>
         </div>
-      </section>
+      </ProfileSection>
 
-      <section>
-        <h2 className="text-lg font-semibold">
-          4. Tax & Withholding
-        </h2>
-
-        <div className="mt-3 space-y-2">
-          {taxEvidenceOptions.map(
-            (option) => (
-              <label
-                key={option.value}
-                className="block"
-              >
-                <input
-                  type="checkbox"
-                  checked={taxEvidenceTypes.includes(
-                    option.value,
-                  )}
-                  onChange={() =>
-                    toggleValue(
-                      taxEvidenceTypes,
-                      option.value,
-                      setTaxEvidenceTypes,
-                    )
-                  }
-                />{" "}
-                {option.label}
-              </label>
-            ),
-          )}
+      {/* Withholding */}
+      <ProfileSection
+        number="04"
+        title="Tax & Withholding"
+        description="Select the tax deduction or withholding evidence relevant to this client."
+        icon={Banknote}
+      >
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {taxEvidenceOptions.map((option) => (
+            <CompactCheck
+              key={option.value}
+              checked={taxEvidenceTypes.includes(
+                option.value,
+              )}
+              onChange={() =>
+                toggleValue(
+                  taxEvidenceTypes,
+                  option.value,
+                  setTaxEvidenceTypes,
+                )
+              }
+              label={option.label}
+            />
+          ))}
         </div>
-      </section>
+      </ProfileSection>
 
-      <section>
-        <h2 className="text-lg font-semibold">
-          5. Additional Information
-        </h2>
-
-        <label className="mt-3 block">
-          <input
-            type="checkbox"
+      {/* Additional */}
+      <ProfileSection
+        number="05"
+        title="Additional Information"
+        description="Capture additional circumstances that affect preparation requirements."
+        icon={UserRoundCheck}
+      >
+        <div className="max-w-xl">
+          <CompactCheck
             checked={hasMultipleEmployers}
-            onChange={(event) =>
-              setHasMultipleEmployers(
-                event.target.checked,
-              )
-            }
-          />{" "}
-          Multiple Employers During Tax Year
-        </label>
-      </section>
+            onChange={setHasMultipleEmployers}
+            label="Multiple Employers During Tax Year"
+          />
+        </div>
+      </ProfileSection>
 
-      <section>
-        <h2 className="text-lg font-semibold">
-          6. Internal Practitioner Notes
-        </h2>
-
+      {/* Notes */}
+      <ProfileSection
+        number="06"
+        title="Internal Notes"
+        description="Add internal context for this client's preparation. These notes are not client-facing."
+        icon={NotebookPen}
+      >
         <textarea
           value={internalNotes}
           onChange={(event) =>
@@ -774,28 +729,215 @@ export function TaxProfileForm({
               event.target.value,
             )
           }
-          rows={5}
+          rows={4}
           maxLength={2000}
           placeholder="Add internal notes about this client's tax profile..."
-          className="mt-3 w-full max-w-2xl border p-2"
+          className="min-h-[110px] w-full resize-y rounded-xl border border-input bg-background px-3.5 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15"
         />
-      </section>
 
-      {message && (
-        <p className="text-sm">{message}</p>
-      )}
+        <p className="mt-1.5 text-right text-xs text-muted-foreground">
+          {internalNotes.length} / 2000
+        </p>
+      </ProfileSection>
 
-      <button
-  type="submit"
-  disabled={isSaving}
-  className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-50"
->
-  {isSaving
-    ? "Saving..."
-    : initialData
-      ? "Update Tax Profile"
-      : "Save Tax Profile"}
-</button>
+      {/* Save */}
+      <div className="sticky bottom-3 z-20 rounded-2xl border bg-white/95 p-3 shadow-[0_10px_35px_rgba(15,23,42,0.10)] backdrop-blur sm:flex sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          {message ? (
+            <p className="text-sm font-medium text-foreground">
+              {message}
+            </p>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-foreground">
+                Tax profile
+              </p>
+
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Save changes to refresh preparation
+                requirements and reconciliation.
+              </p>
+            </>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={isSaving}
+          className="mt-3 h-10 w-full rounded-xl px-5 shadow-sm sm:mt-0 sm:w-auto"
+        >
+          {isSaving ? (
+            "Saving..."
+          ) : (
+            <>
+              <Save className="size-4" />
+              {initialData
+                ? "Update Tax Profile"
+                : "Save Tax Profile"}
+            </>
+          )}
+        </Button>
+      </div>
     </form>
+  );
+}
+
+function ProfileSection({
+  number,
+  title,
+  description,
+  icon: Icon,
+  children,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  icon: typeof FileText;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+      <div className="flex items-start gap-3 border-b bg-muted/[0.18] px-5 py-4 sm:px-6">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon className="size-[17px]" />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold tracking-[0.08em] text-primary">
+              {number}
+            </span>
+
+            <ChevronRight className="size-3 text-muted-foreground" />
+
+            <h2 className="text-base font-semibold text-foreground">
+              {title}
+            </h2>
+          </div>
+
+          <p className="mt-1 text-sm leading-5 text-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </div>
+
+      <div className="p-4 sm:p-5 lg:p-6">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function ChoiceCard({
+  type,
+  name,
+  checked,
+  onChange,
+  title,
+  description,
+}: {
+  type: "radio";
+  name: string;
+  checked: boolean;
+  onChange: () => void;
+  title: string;
+  description: string;
+}) {
+  return (
+    <label
+      className={[
+        "flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors",
+        checked
+          ? "border-primary/35 bg-primary/[0.04]"
+          : "bg-white hover:bg-muted/20",
+      ].join(" ")}
+    >
+      <input
+        type={type}
+        name={name}
+        checked={checked}
+        onChange={onChange}
+        className="mt-0.5 size-4 accent-primary"
+      />
+
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-foreground">
+          {title}
+        </span>
+
+        <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+          {description}
+        </span>
+      </span>
+    </label>
+  );
+}
+
+function CompactCheck({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}) {
+  return (
+    <label
+      className={[
+        "flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5 transition-colors",
+        checked
+          ? "border-primary/30 bg-primary/[0.035]"
+          : "bg-white hover:bg-muted/20",
+      ].join(" ")}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) =>
+          onChange(event.target.checked)
+        }
+        className="size-4 shrink-0 rounded border-input accent-primary"
+      />
+
+      <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
+        {label}
+      </span>
+
+      {checked && (
+        <Check className="size-4 shrink-0 text-primary" />
+      )}
+    </label>
+  );
+}
+
+function MoneyField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+        {label} (PKR)
+      </span>
+
+      <Input
+        type="number"
+        min="0"
+        step="0.01"
+        inputMode="decimal"
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        placeholder="Optional"
+        className="h-10"
+      />
+    </label>
   );
 }

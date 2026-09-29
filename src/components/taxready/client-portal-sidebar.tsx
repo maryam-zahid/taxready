@@ -72,10 +72,10 @@ function NavigationItem({
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150",
+        "group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25",
         active
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          ? "bg-primary/10 text-primary"
           : "text-sidebar-foreground hover:bg-muted hover:text-foreground",
       )}
     >
@@ -95,7 +95,7 @@ function NavigationItem({
 }
 
 export function ClientPortalSidebar({
-  practiceName,
+  practiceName: _practiceName,
   className,
   onNavigate,
 }: ClientPortalSidebarProps) {
@@ -153,12 +153,12 @@ export function ClientPortalSidebar({
 
         <div className="mt-auto pt-8">
           <div className="border-t border-sidebar-border px-3 pt-5">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {practiceName || "Tax practice"}
+            <p className="text-sm font-semibold text-foreground">
+              TaxReady
             </p>
 
-            <p className="mt-1 text-xs text-muted-foreground">
-              Secure client portal
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Secure client workspace
             </p>
           </div>
         </div>

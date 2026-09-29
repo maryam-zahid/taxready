@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
+import { TaxReadyLogo } from "@/components/taxready/taxready-logo";
 import { authClient } from "@/lib/auth-client";
 
 const loginSchema = z.object({
@@ -81,26 +81,34 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/20">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2.5"
-          >
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-base font-bold text-primary-foreground">
-              T
-            </span>
+      <header className="border-b border-white/10 bg-primary text-primary-foreground shadow-sm">
+  <div className="flex h-[60px] w-full items-center justify-between gap-4 px-4 sm:px-5 lg:px-6">
+<TaxReadyLogo href="/" light />
+    <nav className="flex items-center gap-1">
+      <Link
+        href="/"
+        className="hidden rounded-lg px-3 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white sm:inline-flex"
+      >
+        Home
+      </Link>
 
-            <span className="text-lg font-semibold tracking-tight text-foreground">
-              TaxReady
-            </span>
-          </Link>
+      <Link
+        href="/login"
+        aria-current="page"
+        className="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white"
+      >
+        Login
+      </Link>
 
-          <span className="text-xs text-muted-foreground sm:text-sm">
-            Secure sign in
-          </span>
-        </div>
-      </header>
+      <Link
+        href="/register"
+        className="ml-1 inline-flex h-9 items-center justify-center rounded-lg bg-white px-4 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-white/90"
+      >
+        Get Started
+      </Link>
+    </nav>
+  </div>
+</header>
 
       <main className="flex w-full flex-1 items-center justify-center px-4 py-5 sm:px-6 sm:py-7">
         <section className="w-full max-w-[480px] rounded-xl border border-border bg-background px-5 py-6 shadow-sm sm:px-7 sm:py-7">
